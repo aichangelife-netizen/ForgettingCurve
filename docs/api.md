@@ -1,6 +1,6 @@
 # API
 
-All Stage 3 API paths are mounted under `/api`. Responses use JSON. Service-layer errors use:
+All API paths are mounted under `/api`. Responses use JSON. Service-layer errors use:
 
 ```json
 {
@@ -118,11 +118,104 @@ Missing designs return `404` with code `test_design_not_found`.
 
 ### POST /api/test-designs/{test_design_id}/start-learning
 
-Transitions a design from `draft` to `learning` and stores `learning_started_at` in one transaction.
+Initializes the fixed learning pool, transitions a design from `draft` to `learning`, and stores `learning_started_at` in one transaction.
+
+The service calculates `required_item_count = items_per_group * group_count`, queries active vocabulary, sorts candidate vocabulary IDs, derives a deterministic local random seed from `SHA256(f"{random_seed}:learning_pool")`, shuffles with a local `random.Random`, and inserts exactly `required_item_count` `test_design_items` in that selected order.
+
+The namespace `learning_pool` keeps this selection independent from future assignment randomization while still using the design's stored `random_seed`.
+
+The persisted `test_design_items` are the frozen learning pool. Later changes to `vocabulary_items.is_active` do not remove items from an initialized design.
 
 Repeated requests or calls for non-draft designs return `409` with code `invalid_design_status_transition`. The timestamp is not silently overwritten.
 
-This endpoint does not implement the learning flow.
+This endpoint does not create `test_assignments`.
+
+### GET /api/test-designs/{test_design_id}/learning-materials
+
+Returns the explicit study materials for a learning design. It includes canonical answers because this endpoint is for study, not checking.
+
+The response includes `required_item_count`, `mastered_item_count`, `remaining_item_count`, and all fixed-pool items ordered by `test_design_item.id`.
+
+Draft or assigning designs return `409` with code `design_not_learning_for_materials`.
+
+### GET /api/test-designs/{test_design_id}/learning-checks/next
+
+Returns the next unmastered learning check item for a learning design. It returns the Korean prompt, attempt count, and consecutive correct count, but does not return `english_answer` or any normalized canonical answer.
+
+Selection is round-robin:
+
+- Unmastered items only.
+- Items with no attempts come first.
+- Then order by `test_design_item.updated_at`.
+- Then order by `test_design_item.id`.
+
+After an item is attempted, `updated_at` is refreshed, moving it behind other unmastered items.
+
+Assigning designs return `409` with code `design_not_learning_for_next_check`.
+
+### POST /api/test-designs/{test_design_id}/learning-attempts
+
+Submits one learning-check attempt.
+
+Request:
+
+```json
+{
+  "test_design_item_id": 1,
+  "user_answer": "memory",
+  "response_time_ms": 2500
+}
+```
+
+`user_answer` is required and may be an empty string. `response_time_ms` may be null but cannot be negative.
+
+The service scores the answer with the exact answer policy, inserts one `vocabulary_attempt` with `attempt_type = learning_check`, no assignment, no actual retention seconds, and `is_valid_for_fitting = false`, then updates the design item counters in the same transaction.
+
+Mastery requires two consecutive correct answers for the same item. An incorrect answer resets only `consecutive_correct_count`; total `correct_count` is preserved.
+
+When all fixed-pool items are mastered, the same transaction transitions the design from `learning` to `assigning`. Assignment rows are not created in Stage 4.
+
+Response:
+
+```json
+{
+  "attempt_id": 1,
+  "test_design_item_id": 1,
+  "is_correct": true,
+  "canonical_answer": "memory",
+  "attempt_count": 2,
+  "correct_count": 2,
+  "consecutive_correct_count": 2,
+  "is_mastered": true,
+  "mastered_at": "UTC timestamp or null",
+  "mastered_item_count": 15,
+  "required_item_count": 100,
+  "remaining_item_count": 85,
+  "design_status": "learning"
+}
+```
+
+The canonical answer is returned only after submission as corrective feedback.
+
+### GET /api/test-designs/{test_design_id}/learning-progress
+
+Returns aggregate learning progress calculated from persisted rows:
+
+```json
+{
+  "test_design_id": 1,
+  "status": "learning",
+  "required_item_count": 100,
+  "pool_item_count": 100,
+  "mastered_item_count": 15,
+  "remaining_item_count": 85,
+  "total_attempt_count": 73,
+  "correct_attempt_count": 48,
+  "learning_started_at": "UTC timestamp"
+}
+```
+
+This endpoint is available for `learning` and `assigning` designs so the final learning state remains readable after automatic transition.
 
 ### GET /api/participants/{participant_id}/test-designs/current
 
@@ -132,4 +225,4 @@ If the participant exists but has no current design, the API returns `404` with 
 
 ## Not Yet Implemented
 
-Stage 3 does not implement learning attempts, mastery counter updates, random vocabulary grouping, assignment creation, activation review, anchor handling, delayed recall submission, curve fitting, curve model creation, authentication, admin pages, or participant-facing frontend pages.
+Stage 4 does not implement test group assignment, `test_assignment` creation, retention interval scheduling, activation review, anchor handling, delayed recall submission, curve fitting, curve model creation, authentication, admin pages, or participant-facing frontend pages.

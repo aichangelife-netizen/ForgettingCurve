@@ -2,7 +2,7 @@
 
 Stage 2 establishes the database foundation only. It does not implement API routes, learning logic, random assignment, curve fitting, frontend pages, or vocabulary seed data.
 
-Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. It does not require a new database migration.
+Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. It does not require a new database migration.
 
 ## Configuration
 
@@ -52,6 +52,8 @@ Stores one experimental design for one participant.
 
 `required_item_count` is calculated in application code as `items_per_group * group_count`.
 
+Starting learning creates the fixed learning pool by inserting exactly `required_item_count` rows into `test_design_items`. The pool is selected from active vocabulary at initialization time and then frozen as persisted rows.
+
 A SQLite partial unique index enforces at most one non-terminal design per participant. Non-terminal statuses are `draft`, `learning`, `assigning`, `activation_review`, and `active`.
 
 ### test_design_groups
@@ -83,6 +85,8 @@ The schema enforces one row per vocabulary item inside a design. It also enforce
 
 - Mastered rows require `mastered_at` and at least `MASTERY_THRESHOLD` consecutive correct answers.
 - Unmastered rows require `mastered_at` to be null and fewer than `MASTERY_THRESHOLD` consecutive correct answers.
+
+Stage 4 uses `updated_at` for round-robin learning checks. Items with no attempts come first; attempted unmastered items move behind other unmastered items when `updated_at` is refreshed.
 
 ### test_assignments
 
@@ -120,7 +124,7 @@ Stores raw learning-check and delayed-recall attempts.
 - `is_valid_for_fitting`: required boolean.
 - `exclusion_reason`: nullable string.
 
-Learning checks cannot reference an assignment, cannot have actual retention seconds, and are never valid for fitting.
+Learning checks cannot reference an assignment, cannot have actual retention seconds, and are never valid for fitting. They are practice data from the initial mastery workflow, not delayed-retention observations.
 
 Delayed recall attempts must reference an assignment and must have actual retention seconds. A nullable unique constraint on `test_assignment_id` enforces one delayed recall row per assignment while still allowing many learning checks with null assignment IDs.
 
@@ -178,6 +182,6 @@ The database foundation intentionally leaves several rules for later service cod
 - Generate and persist UTC-aware timestamps consistently.
 - Prevent hard deletion of completed designs and official curve rows.
 - Determine whether pending assignments are due.
-- Validate later status transitions and lifecycle timestamp ordering beyond `draft` to `learning`.
-- Implement random assignment, learning checks, delayed recall scoring, and curve fitting.
+- Validate later status transitions and lifecycle timestamp ordering beyond `learning` to `assigning`.
+- Implement test group assignment, delayed recall scoring, and curve fitting.
 - Decide when a delayed recall attempt is valid for fitting and provide a meaningful `exclusion_reason` when it is not.

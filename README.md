@@ -8,7 +8,7 @@ The system will present Korean vocabulary prompts, collect English recall respon
 R(t) = exp(-((t / T) ** c))
 ```
 
-For the MVP, the backend and frontend are intentionally minimal. Stage 3 adds vocabulary import infrastructure, exact answer scoring, anonymous participant APIs, and draft test-design APIs. Experiment pages, learning attempts, random assignment, delayed recall, and curve fitting are not implemented yet.
+For the MVP, the backend and frontend are intentionally minimal. Stage 4 adds the backend learning workflow: fixed learning-pool initialization, study materials, learning checks, learning attempts, mastery tracking, progress reporting, and automatic transition to assigning. Experiment pages, assignment creation, delayed recall, and curve fitting are not implemented yet.
 
 ## Directory Structure
 
@@ -30,6 +30,7 @@ For the MVP, the backend and frontend are intentionally minimal. Stage 3 adds vo
 │   ├── tests/
 │   │   ├── test_answer_scoring.py
 │   │   ├── test_api_stage3.py
+│   │   ├── test_learning_stage4.py
 │   │   ├── test_database_constraints.py
 │   │   ├── test_health.py
 │   │   └── test_migrations.py
@@ -142,4 +143,4 @@ Use `--update-existing` only when existing canonical English answers should be u
 
 ## API Documentation
 
-See [docs/api.md](docs/api.md) for Stage 3 API endpoints and [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules.
+See [docs/api.md](docs/api.md) for API endpoints and [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules.

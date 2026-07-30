@@ -134,38 +134,6 @@ def get_current_test_design(session: Session, participant_id: int) -> TestDesign
     return design
 
 
-def start_learning(session: Session, test_design_id: int) -> TestDesign:
-    try:
-        with session.begin():
-            design = session.scalar(
-                select(TestDesign)
-                .where(TestDesign.id == test_design_id)
-                .options(selectinload(TestDesign.groups))
-            )
-            if design is None:
-                raise NotFoundError("test_design_not_found", "Test design was not found.")
-
-            if design.status != TestDesignStatus.DRAFT:
-                raise ConflictError(
-                    "invalid_design_status_transition",
-                    "Only draft test designs can start learning.",
-                )
-
-            active_count = _active_vocabulary_count(session)
-            if active_count < required_item_count(design.items_per_group, design.group_count):
-                raise ConflictError(
-                    "insufficient_active_vocabulary",
-                    "There are not enough active vocabulary items for this test design.",
-                )
-
-            design.status = TestDesignStatus.LEARNING
-            design.learning_started_at = utc_now()
-    except IntegrityError as exc:
-        raise ConflictError("test_design_conflict", "Test design could not be updated because of a data conflict.") from exc
-
-    return _get_design_with_groups(session, test_design_id)
-
-
 def to_test_design_response_data(design: TestDesign) -> dict:
     ordered_groups = sorted(design.groups, key=lambda group: group.group_index)
     return {

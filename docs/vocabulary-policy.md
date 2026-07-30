@@ -1,6 +1,6 @@
 # Vocabulary Policy
 
-Stage 3 uses one canonical English answer for each Korean vocabulary item.
+The project uses one canonical English answer for each Korean vocabulary item.
 
 ## Exact Answer Checking
 
@@ -25,6 +25,8 @@ Reusable functions live in `backend/app/services/answer_scoring.py`:
 
 - `normalize_answer(answer: str) -> str`
 - `check_answer(user_answer: str, canonical_answer: str) -> bool`
+
+Stage 4 learning attempts store the original submitted answer and the normalized submitted answer. A blank submitted answer is stored and scored incorrect for any nonblank canonical answer. The canonical answer is returned only after submission as learning feedback.
 
 ## Demonstration Source Data
 

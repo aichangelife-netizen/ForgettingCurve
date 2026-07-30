@@ -9,13 +9,13 @@ ForgettingCurve is a local research MVP for estimating an individual's forgettin
 - Assign each mastered word to exactly one delayed retention interval.
 - Preserve item-level raw data for analysis.
 - Use actual elapsed time when estimating retention.
-- Eventually fit `R(t) = exp(-((t / T) ** c))` with `b` fixed at `1`.
+- Fit official personal curve versions with `R(t) = exp(-((t / T) ** c))` and `b` fixed at `1`.
 
 ## Planned Components
 
 ### Frontend
 
-The frontend is a Next.js TypeScript application using the App Router. It will provide the local research interface for mastery testing, delayed recall testing, and basic progress review.
+The frontend is a Next.js TypeScript application using the App Router. It will provide the local research interface for mastery testing, delayed recall testing, and basic progress review. Stage 7 does not add participant-facing curve pages or chart components.
 
 ### Backend
 
@@ -27,7 +27,7 @@ SQLite is used for local storage. SQLAlchemy 2.x typed ORM models and Alembic mi
 
 ### Analysis
 
-NumPy and SciPy will support offline fitting of the retention curve. Analysis should consume item-level trial records and derive actual elapsed time from stored timestamps.
+NumPy and SciPy support official backend fitting of the retention curve. Analysis consumes item-level delayed-recall trial records and uses `actual_retention_seconds`, not target interval labels or aggregated percentages.
 
 ## Data Flow
 
@@ -40,7 +40,7 @@ NumPy and SciPy will support offline fitting of the retention curve. Analysis sh
 
 ## Current Scope
 
-Stage 6 contains the project skeleton, database foundation, early API infrastructure, backend learning workflow, deterministic activation scheduling, and delayed-recall result capture:
+Stage 7 contains the project skeleton, database foundation, early API infrastructure, backend learning workflow, deterministic activation scheduling, delayed-recall result capture, and official curve-model fitting:
 
 - Minimal FastAPI app with `GET /health`.
 - Basic backend health test.
@@ -64,7 +64,12 @@ Stage 6 contains the project skeleton, database foundation, early API infrastruc
 - Delayed-recall submission with actual retention seconds.
 - Assignment, group, and design completion.
 - Raw retention progress, summaries, and participant history.
+- Curve-fitting eligibility checks for completed trigger designs.
+- Item-level Bernoulli maximum-likelihood fitting for `T` and `c`.
+- Append-only Personal Curve V1/V2/V3 versioning in `curve_models`.
+- Historical and latest curve-model retrieval APIs.
+- Observed retention points and smooth predicted curve points.
 - Minimal Next.js home page.
 - Architecture documentation.
 
-The project does not yet include final research vocabulary, forgetting-curve fitting, curve model creation, authentication, admin pages, participant-facing frontend pages, notifications, or background jobs.
+The project does not yet include final research vocabulary, authentication, admin pages, participant-facing frontend pages, frontend curve charts, provisional curves, alternative models, confidence intervals, notifications, or background jobs.

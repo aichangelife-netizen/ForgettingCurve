@@ -319,7 +319,7 @@ During active delayed testing, no corrective feedback is returned. The response 
 
 `lateness_seconds` is calculated only for the response as `max(0, attempted_at - scheduled_at)`. It is not stored.
 
-After each submission, the service checks whether the assignment's group is complete. A group completes only when all assignments in that group are completed and each has exactly one valid delayed-recall attempt. After that, the service checks whether the whole design is complete. Stage 6 does not create `curve_models` rows and does not fit a curve.
+After each submission, the service checks whether the assignment's group is complete. A group completes only when all assignments in that group are completed and each has exactly one valid delayed-recall attempt. After that, the service checks whether the whole design is complete. Delayed-recall submission does not create `curve_models` rows or fit a curve automatically.
 
 ### GET /api/test-designs/{test_design_id}/delayed-recalls/progress
 
@@ -329,7 +329,7 @@ Returns delayed-recall progress for `active` and `completed` designs. All counte
 
 Returns raw observed retention summaries by group for `active` and `completed` designs. Group summaries include calculated correct/incorrect counts, observed accuracy, and actual-retention statistics from valid delayed-recall rows.
 
-Partial groups may show partial raw observations, but only completed groups count as complete time points. `curve_available` is always `false` in Stage 6, and the response does not expose raw user answers or canonical English answers.
+Partial groups may show partial raw observations, but only completed groups count as complete time points. Stage 7 official curves are created and read through separate curve-model endpoints; this raw summary response does not expose raw user answers or canonical English answers.
 
 ### GET /api/participants/{participant_id}/retention-history
 
@@ -341,6 +341,100 @@ Returns the participant's current non-terminal design. Non-terminal statuses are
 
 If the participant exists but has no current design, the API returns `404` with code `current_test_design_not_found`. This keeps the absence explicit for the local MVP client.
 
+## Curve Models
+
+Stage 7 curve endpoints create and read official personal forgetting-curve versions. They use item-level delayed-recall observations only; raw group percentages are returned as observed points but are not fitted.
+
+### GET /api/test-designs/{test_design_id}/curve-eligibility
+
+Returns a read-only eligibility report for fitting an official curve using completed historical data through the trigger design.
+
+Response:
+
+```json
+{
+  "test_design_id": 1,
+  "participant_id": 1,
+  "design_status": "completed",
+  "eligible": true,
+  "complete_time_point_count": 5,
+  "sample_count": 100,
+  "correct_count": 64,
+  "incorrect_count": 36,
+  "has_existing_curve": false,
+  "next_version": 1,
+  "reasons": []
+}
+```
+
+Eligibility failures include `design_not_completed`, `out_of_order_trigger`, `fewer_than_five_complete_time_points`, `no_valid_delayed_results`, `all_results_correct`, `all_results_incorrect`, and `insufficient_distinct_times`.
+
+### POST /api/test-designs/{test_design_id}/curve-model
+
+Fits and stores one official append-only curve model for a completed trigger design. The endpoint is idempotent for the same trigger design: if a row already exists, it returns the stored model with `created = false`.
+
+Response:
+
+```json
+{
+  "created": true,
+  "curve": {
+    "id": 1,
+    "participant_id": 1,
+    "trigger_test_design_id": 1,
+    "version": 1,
+    "display_name": "Personal Curve V1",
+    "model_name": "exponential_power",
+    "fit_method": "bernoulli_mle",
+    "T_seconds": 12345.6,
+    "c": 0.82,
+    "log_likelihood": -42.5,
+    "sample_count": 100,
+    "complete_time_point_count": 5,
+    "converged": true,
+    "data_cutoff_at": "UTC timestamp",
+    "fitted_at": "UTC timestamp"
+  },
+  "observed_points": [
+    {
+      "test_design_id": 1,
+      "test_design_group_id": 1,
+      "group_index": 1,
+      "target_interval_seconds": 600,
+      "mean_actual_retention_seconds": 617.4,
+      "minimum_actual_retention_seconds": 601,
+      "maximum_actual_retention_seconds": 641,
+      "correct_count": 18,
+      "total_count": 20,
+      "observed_accuracy": 0.9
+    }
+  ],
+  "predicted_points": [
+    {
+      "time_seconds": 601.0,
+      "predicted_retention": 0.93
+    }
+  ],
+  "warnings": []
+}
+```
+
+The model is `R(t) = exp(-((t / T) ** c))` with `b` fixed at `1`. `T_seconds` is stored in seconds, `c` is positive, and `log_likelihood` is the maximized Bernoulli log likelihood, not a negative loss.
+
+Conflict responses include `design_not_completed`, `out_of_order_trigger`, and duplicate insert conflicts. Fitting or eligibility failures return a validation error without inserting a row and without invented `T` or `c` values.
+
+### GET /api/participants/{participant_id}/curve-models
+
+Lists official curve metadata for a participant ordered by version. Missing participants return `404` with code `participant_not_found`.
+
+### GET /api/participants/{participant_id}/curve-models/latest
+
+Returns the latest official curve, observed points reconstructed from the source cutoff, and 100 smooth predicted points. Participants without a model return `404` with code `curve_model_not_found`.
+
+### GET /api/participants/{participant_id}/curve-models/{version}
+
+Returns one historical curve version and its reconstructed observed and predicted points. Missing versions return `404` with code `curve_version_not_found`.
+
 ## Not Yet Implemented
 
-Stage 6 does not implement forgetting-curve fitting, `T` or `c` estimation, `curve_models` insertion, provisional curves, notifications, background jobs, authentication, admin pages, or participant-facing frontend pages.
+Stage 7 does not implement participant-facing frontend pages, frontend curve charts, provisional curves, alternative models, confidence intervals, bootstrap analysis, model comparison, notifications, background jobs, authentication, admin pages, or CSV export.

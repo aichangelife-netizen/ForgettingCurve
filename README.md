@@ -2,13 +2,13 @@
 
 A local research MVP for measuring an individual's forgetting curve using Korean-to-English vocabulary recall.
 
-The system will present Korean vocabulary prompts, collect English recall responses, preserve item-level raw data, and eventually fit an individual retention curve:
+The system presents Korean vocabulary prompts, collects English recall responses, preserves item-level raw data, and fits an official individual retention curve:
 
 ```text
 R(t) = exp(-((t / T) ** c))
 ```
 
-For the MVP, the backend and frontend are intentionally minimal. Stage 6 adds due delayed-recall retrieval, delayed-recall submission, actual retention-time calculation, assignment/group/design completion, progress reporting, and raw observed retention summaries. Experiment pages and curve fitting are not implemented yet.
+For the MVP, the backend and frontend are intentionally minimal. Stage 7 adds official backend curve fitting from completed delayed-recall data, append-only Personal Curve V1/V2/V3 versioning, observed retention points, predicted curve points, eligibility checks, and historical model retrieval. Participant-facing experiment pages and curve charts are not implemented yet.
 
 ## Directory Structure
 
@@ -30,6 +30,9 @@ For the MVP, the backend and frontend are intentionally minimal. Stage 6 adds du
 │   ├── tests/
 │   │   ├── test_answer_scoring.py
 │   │   ├── test_api_stage3.py
+│   │   ├── test_assignment_stage5.py
+│   │   ├── test_curve_stage7.py
+│   │   ├── test_delayed_recall_stage6.py
 │   │   ├── test_learning_stage4.py
 │   │   ├── test_database_constraints.py
 │   │   ├── test_health.py
@@ -39,6 +42,7 @@ For the MVP, the backend and frontend are intentionally minimal. Stage 6 adds du
 │   └── pyproject.toml
 ├── docs/
 │   ├── architecture.md   # Planned architecture notes
+│   ├── curve-fitting.md
 │   └── database-schema.md
 ├── frontend/             # Next.js TypeScript App Router app
 │   ├── app/
@@ -143,4 +147,4 @@ Use `--update-existing` only when existing canonical English answers should be u
 
 ## API Documentation
 
-See [docs/api.md](docs/api.md) for API endpoints and [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules.
+See [docs/api.md](docs/api.md) for API endpoints, [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules, and [docs/curve-fitting.md](docs/curve-fitting.md) for the official Stage 7 fitting contract.

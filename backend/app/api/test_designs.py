@@ -21,6 +21,7 @@ from app.schemas.test_designs import (
     TestDesignCreateRequest,
     TestDesignResponse,
 )
+from app.schemas.curve_models import CurveEligibilityResponse, CurveModelCreateResponse
 from app.services.activation_review import (
     complete_activation_review_assignment,
     get_activation_progress,
@@ -45,6 +46,7 @@ from app.services.test_designs import (
     to_test_design_response_data,
 )
 from app.services.retention_summary import get_retention_summary
+from app.services.curve_models import create_curve_model, curve_eligibility
 
 
 router = APIRouter(prefix="/test-designs", tags=["test-designs"])
@@ -208,3 +210,19 @@ def get_retention_summary_endpoint(
     session: Session = Depends(get_db),
 ) -> RetentionSummaryResponse:
     return RetentionSummaryResponse.model_validate(get_retention_summary(session, test_design_id))
+
+
+@router.get("/{test_design_id}/curve-eligibility", response_model=CurveEligibilityResponse)
+def get_curve_eligibility_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> CurveEligibilityResponse:
+    return CurveEligibilityResponse.model_validate(curve_eligibility(session, test_design_id))
+
+
+@router.post("/{test_design_id}/curve-model", response_model=CurveModelCreateResponse)
+def create_curve_model_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> CurveModelCreateResponse:
+    return CurveModelCreateResponse.model_validate(create_curve_model(session, test_design_id))

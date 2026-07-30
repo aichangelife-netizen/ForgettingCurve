@@ -2,7 +2,7 @@
 
 Stage 2 establishes the database foundation only. It does not implement API routes, learning logic, random assignment, curve fitting, frontend pages, or vocabulary seed data.
 
-Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. Stage 5 uses it for deterministic group assignment, activation review, per-item `anchor_at`, and delayed-test scheduling. Stage 6 uses it for delayed-recall attempts, actual retention seconds, completed assignments, completed groups, completed designs, and raw retention summaries. It does not require a new database migration.
+Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. Stage 5 uses it for deterministic group assignment, activation review, per-item `anchor_at`, and delayed-test scheduling. Stage 6 uses it for delayed-recall attempts, actual retention seconds, completed assignments, completed groups, completed designs, and raw retention summaries. Stage 7 uses the existing `curve_models` table for official curve persistence and does not require a new database migration.
 
 ## Configuration
 
@@ -134,11 +134,11 @@ Learning checks cannot reference an assignment, cannot have actual retention sec
 
 Delayed recall attempts must reference an assignment and must have actual retention seconds. A nullable unique constraint on `test_assignment_id` enforces one delayed recall row per assignment while still allowing many learning checks with null assignment IDs.
 
-Stage 6 delayed-recall attempts are valid for fitting by default, but no curve fitting is performed. Raw summaries calculate group accuracy and retention statistics from item-level delayed-recall rows; they do not store aggregate accuracy.
+Stage 6 delayed-recall attempts are valid for fitting by default. Stage 7 official curve fitting consumes only valid delayed-recall item rows with positive `actual_retention_seconds`; learning checks, activation review, invalid attempts, and aggregate group percentages are excluded from fitting. Raw summaries calculate group accuracy and retention statistics from item-level delayed-recall rows; they do not store aggregate accuracy.
 
 ### curve_models
 
-Stores official fitted curve rows. Rows are append-only by policy.
+Stores official fitted curve rows. Rows are append-only by service policy.
 
 - `id`: integer primary key.
 - `participant_id`: references `participants.id`.
@@ -154,6 +154,10 @@ Stores official fitted curve rows. Rows are append-only by policy.
 - `data_cutoff_at`, `fitted_at`: UTC timestamps.
 
 A composite foreign key guarantees that the trigger design belongs to the same participant as the curve model.
+
+Stage 7 inserts one row per completed trigger design at most. Versions are assigned as positive integers per participant and displayed as `Personal Curve V1`, `Personal Curve V2`, and so on. Creating a newer version does not update or delete older rows. The service rejects an older trigger design after a later trigger already has a curve, so a version cannot silently include data from beyond its chronological cutoff.
+
+`data_cutoff_at` records the latest included delayed-recall attempt timestamp for the trigger's source dataset. Historical retrieval reconstructs observed points from completed designs through the stored trigger design and recomputes predicted points from the immutable stored `T` and `c`.
 
 ## Delete Policy
 
@@ -192,5 +196,6 @@ The database foundation intentionally leaves several rules for later service cod
 - Prevent hard deletion of completed designs and official curve rows.
 - Determine whether pending assignments are due.
 - Validate later status transitions and lifecycle timestamp ordering beyond design completion.
-- Implement curve fitting.
+- Maintain append-only behavior for completed designs and official curve rows.
 - Decide when a delayed recall attempt is valid for fitting and provide a meaningful `exclusion_reason` when it is not.
+- Enforce curve-fitting eligibility, chronological trigger order, and transactional duplicate protection.

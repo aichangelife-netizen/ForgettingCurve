@@ -43,9 +43,13 @@ For the MVP, Stage 8 adds the complete participant-facing frontend workflow: loc
 ├── docs/
 │   ├── architecture.md   # Planned architecture notes
 │   ├── curve-fitting.md
+│   ├── data-dictionary.md
 │   ├── database-schema.md
+│   ├── experiment-protocol.md
+│   ├── final-audit.md
 │   ├── frontend-workflow.md
-│   └── manual-mvp-test.md
+│   ├── manual-mvp-test.md
+│   └── server-deployment-checklist.md
 ├── frontend/             # Next.js TypeScript App Router app
 │   ├── app/
 │   │   ├── globals.css
@@ -176,4 +180,4 @@ Use `--update-existing` only when existing canonical English answers should be u
 
 ## API Documentation
 
-See [docs/api.md](docs/api.md) for API endpoints, [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules, [docs/curve-fitting.md](docs/curve-fitting.md) for the official fitting contract, [docs/frontend-workflow.md](docs/frontend-workflow.md) for participant-facing routes, and [docs/manual-mvp-test.md](docs/manual-mvp-test.md) for a manual end-to-end scenario.
+See [docs/api.md](docs/api.md) for API endpoints, [docs/experiment-protocol.md](docs/experiment-protocol.md) for protocol rules, [docs/data-dictionary.md](docs/data-dictionary.md) for research fields, [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules, [docs/curve-fitting.md](docs/curve-fitting.md) for the official fitting contract, [docs/frontend-workflow.md](docs/frontend-workflow.md) for participant-facing routes, [docs/manual-mvp-test.md](docs/manual-mvp-test.md) for a manual end-to-end scenario, and [docs/server-deployment-checklist.md](docs/server-deployment-checklist.md) for deployment preparation.

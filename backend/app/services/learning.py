@@ -1,7 +1,7 @@
 import hashlib
 import random
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, case, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -290,7 +290,7 @@ def get_learning_progress(session: Session, test_design_id: int) -> dict:
             func.count(TestDesignItem.id),
             func.coalesce(func.sum(TestDesignItem.attempt_count), 0),
             func.coalesce(func.sum(TestDesignItem.correct_count), 0),
-            func.coalesce(func.sum(TestDesignItem.is_mastered), 0),
+            func.coalesce(func.sum(case((TestDesignItem.is_mastered.is_(True), 1), else_=0)), 0),
         ).where(TestDesignItem.test_design_id == test_design_id)
     ).one()
     pool_item_count = int(aggregates[0])

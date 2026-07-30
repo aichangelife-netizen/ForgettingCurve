@@ -2,7 +2,7 @@
 
 Stage 2 establishes the database foundation only. It does not implement API routes, learning logic, random assignment, curve fitting, frontend pages, or vocabulary seed data.
 
-Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. Stage 5 uses it for deterministic group assignment, activation review, per-item `anchor_at`, and delayed-test scheduling. Stage 6 uses it for delayed-recall attempts, actual retention seconds, completed assignments, completed groups, completed designs, and raw retention summaries. Stage 7 uses the existing `curve_models` table for official curve persistence and does not require a new database migration.
+Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. Stage 5 uses it for deterministic group assignment, activation review, per-item `anchor_at`, and delayed-test scheduling. Stage 6 uses it for delayed-recall attempts, actual retention seconds, completed assignments, completed groups, completed designs, and raw retention summaries. Stage 7 uses the existing `curve_models` table for official curve persistence and does not require a new database migration. Stage 9 hardening also does not require a database migration.
 
 ## Configuration
 
@@ -87,6 +87,8 @@ The schema enforces one row per vocabulary item inside a design. It also enforce
 - Unmastered rows require `mastered_at` to be null and fewer than `MASTERY_THRESHOLD` consecutive correct answers.
 
 Stage 4 uses `updated_at` for round-robin learning checks. Items with no attempts come first; attempted unmastered items move behind other unmastered items when `updated_at` is refreshed.
+
+Learning progress counts mastered items with an explicit conditional count rather than summing the boolean column, so SQLite reports the true mastered-item count consistently.
 
 ### test_assignments
 

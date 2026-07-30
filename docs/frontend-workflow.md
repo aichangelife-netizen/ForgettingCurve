@@ -33,6 +33,8 @@ Creating a participant calls `POST /api/participants` and stores only `participa
 
 The local session is not authentication. It is only local MVP persistence so a participant can resume on the same browser. Corrupted session data is cleared. If the backend no longer has the participant, the frontend clears the local session and asks the participant to start again.
 
+Typed answers are held only in component state while the page is open. They are not written to localStorage and are not logged to the browser console.
+
 ## Experiment Flow
 
 The design page validates user input before sending raw integer seconds to the backend. It displays `group_count`, `required_item_count`, readable interval labels, and the sentence `This experiment requires mastering X vocabulary items.` Backend validation remains authoritative.

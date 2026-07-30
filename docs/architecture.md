@@ -73,6 +73,7 @@ Stage 8 contains the project skeleton, database foundation, early API infrastruc
 - Typed frontend API client with backend error parsing.
 - Local MVP participant session storage using only participant ID and participant code.
 - Responsive SVG curve visualization backed by server predicted points.
+- Full lifecycle integration coverage through V1 and V2 curve creation.
 - Architecture documentation.
 
 The project does not yet include final research vocabulary, authentication, admin pages, CSV export, provisional curves, alternative models, confidence intervals, notifications, background jobs, or public deployment.

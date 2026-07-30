@@ -12,6 +12,9 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # SQLite
 *.db
@@ -22,6 +25,7 @@ __pycache__/
 node_modules/
 .next/
 out/
+coverage/
 
 # IDE
 .vscode/

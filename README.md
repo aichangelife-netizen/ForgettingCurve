@@ -8,7 +8,7 @@ The system will present Korean vocabulary prompts, collect English recall respon
 R(t) = exp(-((t / T) ** c))
 ```
 
-For the MVP, the backend and frontend are intentionally minimal. Stage 5 adds deterministic retention-group assignment, activation review, per-item anchor timestamps, delayed-test scheduling, and schedule summaries. Experiment pages, delayed recall submission, and curve fitting are not implemented yet.
+For the MVP, the backend and frontend are intentionally minimal. Stage 6 adds due delayed-recall retrieval, delayed-recall submission, actual retention-time calculation, assignment/group/design completion, progress reporting, and raw observed retention summaries. Experiment pages and curve fitting are not implemented yet.
 
 ## Directory Structure
 

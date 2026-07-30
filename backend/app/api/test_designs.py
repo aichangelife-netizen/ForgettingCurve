@@ -8,11 +8,16 @@ from app.schemas.test_designs import (
     ActivationReviewNextResponse,
     AssignmentInitializationResponse,
     AssignmentScheduleResponse,
+    DelayedRecallProgressResponse,
+    DelayedRecallSubmissionRequest,
+    DelayedRecallSubmissionResponse,
     LearningAttemptRequest,
     LearningAttemptResponse,
     LearningMaterialsResponse,
     LearningProgressResponse,
+    NextDelayedRecallResponse,
     NextLearningCheckResponse,
+    RetentionSummaryResponse,
     TestDesignCreateRequest,
     TestDesignResponse,
 )
@@ -22,6 +27,11 @@ from app.services.activation_review import (
     get_activation_review_next,
 )
 from app.services.assignment import get_assignment_schedule, initialize_assignments
+from app.services.delayed_recall import (
+    get_delayed_recall_progress,
+    get_next_due_delayed_recall,
+    submit_delayed_recall,
+)
 from app.services.learning import (
     get_learning_materials,
     get_learning_progress,
@@ -34,6 +44,7 @@ from app.services.test_designs import (
     get_test_design,
     to_test_design_response_data,
 )
+from app.services.retention_summary import get_retention_summary
 
 
 router = APIRouter(prefix="/test-designs", tags=["test-designs"])
@@ -155,3 +166,45 @@ def get_assignment_schedule_endpoint(
     session: Session = Depends(get_db),
 ) -> AssignmentScheduleResponse:
     return AssignmentScheduleResponse.model_validate(get_assignment_schedule(session, test_design_id))
+
+
+@router.get("/{test_design_id}/delayed-recalls/next", response_model=NextDelayedRecallResponse)
+def get_next_due_delayed_recall_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> NextDelayedRecallResponse:
+    return NextDelayedRecallResponse.model_validate(get_next_due_delayed_recall(session, test_design_id))
+
+
+@router.post("/{test_design_id}/delayed-recalls/{assignment_id}", response_model=DelayedRecallSubmissionResponse)
+def submit_delayed_recall_endpoint(
+    test_design_id: int,
+    assignment_id: int,
+    request: DelayedRecallSubmissionRequest,
+    session: Session = Depends(get_db),
+) -> DelayedRecallSubmissionResponse:
+    return DelayedRecallSubmissionResponse.model_validate(
+        submit_delayed_recall(
+            session,
+            test_design_id=test_design_id,
+            assignment_id=assignment_id,
+            user_answer=request.user_answer,
+            response_time_ms=request.response_time_ms,
+        )
+    )
+
+
+@router.get("/{test_design_id}/delayed-recalls/progress", response_model=DelayedRecallProgressResponse)
+def get_delayed_recall_progress_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> DelayedRecallProgressResponse:
+    return DelayedRecallProgressResponse.model_validate(get_delayed_recall_progress(session, test_design_id))
+
+
+@router.get("/{test_design_id}/retention-summary", response_model=RetentionSummaryResponse)
+def get_retention_summary_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> RetentionSummaryResponse:
+    return RetentionSummaryResponse.model_validate(get_retention_summary(session, test_design_id))

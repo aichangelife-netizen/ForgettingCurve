@@ -4,10 +4,11 @@ from fastapi import APIRouter, Body, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.schemas.participants import ParticipantResponse
+from app.schemas.participants import ParticipantResponse, ParticipantRetentionHistoryResponse
 from app.schemas.test_designs import TestDesignResponse
 from app.services.participants import create_participant, get_participant
 from app.services.exceptions import ValidationServiceError
+from app.services.retention_summary import get_participant_retention_history
 from app.services.test_designs import get_current_test_design, to_test_design_response_data
 
 
@@ -39,3 +40,13 @@ def get_current_test_design_endpoint(
 ) -> TestDesignResponse:
     design = get_current_test_design(session, participant_id)
     return TestDesignResponse.model_validate(to_test_design_response_data(design))
+
+
+@router.get("/{participant_id}/retention-history", response_model=ParticipantRetentionHistoryResponse)
+def get_participant_retention_history_endpoint(
+    participant_id: int,
+    session: Session = Depends(get_db),
+) -> ParticipantRetentionHistoryResponse:
+    return ParticipantRetentionHistoryResponse.model_validate(
+        get_participant_retention_history(session, participant_id)
+    )

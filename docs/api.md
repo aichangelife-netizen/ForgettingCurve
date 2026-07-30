@@ -285,6 +285,56 @@ No persistent due status is stored. A pending assignment is due only when `statu
 
 Stage 6 delayed tests should use the actual elapsed time from each assignment's `anchor_at` and delayed response timestamp, not only the target `interval_seconds`.
 
+### GET /api/test-designs/{test_design_id}/delayed-recalls/next
+
+Returns the earliest due delayed-recall assignment for an `active` design.
+
+Due state is derived, never persisted:
+
+```text
+assignment.status = pending
+and assignment.scheduled_at <= current UTC time
+```
+
+Due assignments are ordered by `scheduled_at`, then `assignment_order`, then assignment ID. The response does not expose `english_answer`, normalized canonical answers, correctness, or `anchor_at`.
+
+If no pending assignment is currently due, the endpoint returns `available = false` with `next_scheduled_at` when a future pending assignment exists. It does not return 404 merely because nothing is due.
+
+### POST /api/test-designs/{test_design_id}/delayed-recalls/{assignment_id}
+
+Submits one due delayed-recall answer for an active design.
+
+Request:
+
+```json
+{
+  "user_answer": "memory",
+  "response_time_ms": 3200
+}
+```
+
+The server rejects early submissions, accepts late submissions, captures `attempted_at`, calculates `actual_retention_seconds = attempted_at - anchor_at` in whole seconds, scores with the exact answer policy, inserts one `delayed_recall` vocabulary attempt, and marks the assignment `completed`.
+
+During active delayed testing, no corrective feedback is returned. The response does not include the canonical answer, normalized canonical answer, or `is_correct`.
+
+`lateness_seconds` is calculated only for the response as `max(0, attempted_at - scheduled_at)`. It is not stored.
+
+After each submission, the service checks whether the assignment's group is complete. A group completes only when all assignments in that group are completed and each has exactly one valid delayed-recall attempt. After that, the service checks whether the whole design is complete. Stage 6 does not create `curve_models` rows and does not fit a curve.
+
+### GET /api/test-designs/{test_design_id}/delayed-recalls/progress
+
+Returns delayed-recall progress for `active` and `completed` designs. All counters are calculated from persisted assignments and groups.
+
+### GET /api/test-designs/{test_design_id}/retention-summary
+
+Returns raw observed retention summaries by group for `active` and `completed` designs. Group summaries include calculated correct/incorrect counts, observed accuracy, and actual-retention statistics from valid delayed-recall rows.
+
+Partial groups may show partial raw observations, but only completed groups count as complete time points. `curve_available` is always `false` in Stage 6, and the response does not expose raw user answers or canonical English answers.
+
+### GET /api/participants/{participant_id}/retention-history
+
+Returns raw retention summaries for the participant's active and completed designs ordered by design creation time. The endpoint does not fit a curve, create curve models, combine percentages into a model, or expose raw/canonical answers.
+
 ### GET /api/participants/{participant_id}/test-designs/current
 
 Returns the participant's current non-terminal design. Non-terminal statuses are `draft`, `learning`, `assigning`, `activation_review`, and `active`.
@@ -293,4 +343,4 @@ If the participant exists but has no current design, the API returns `404` with 
 
 ## Not Yet Implemented
 
-Stage 5 does not implement delayed recall submission, delayed-recall `vocabulary_attempt` rows, group accuracy, group completion, design completion, curve fitting, curve model creation, notifications, background jobs, authentication, admin pages, or participant-facing frontend pages.
+Stage 6 does not implement forgetting-curve fitting, `T` or `c` estimation, `curve_models` insertion, provisional curves, notifications, background jobs, authentication, admin pages, or participant-facing frontend pages.

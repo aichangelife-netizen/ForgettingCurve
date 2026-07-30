@@ -2,7 +2,7 @@
 
 Stage 2 establishes the database foundation only. It does not implement API routes, learning logic, random assignment, curve fitting, frontend pages, or vocabulary seed data.
 
-Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. Stage 5 uses it for deterministic group assignment, activation review, per-item `anchor_at`, and delayed-test scheduling. It does not require a new database migration.
+Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. Stage 5 uses it for deterministic group assignment, activation review, per-item `anchor_at`, and delayed-test scheduling. Stage 6 uses it for delayed-recall attempts, actual retention seconds, completed assignments, completed groups, completed designs, and raw retention summaries. It does not require a new database migration.
 
 ## Configuration
 
@@ -109,6 +109,8 @@ During activation review, each assignment receives a server-generated `anchor_at
 
 The schema does not store `due` or `missed`. An assignment is due when `status = 'pending'` and `scheduled_at <= current UTC time`.
 
+Stage 6 changes pending assignments to completed only after a due delayed-recall submission. Late tests remain accepted. The service preserves the original `anchor_at` and `scheduled_at`, stores the server-generated `completed_at`, and calculates actual retention from `attempted_at - anchor_at`.
+
 Group accuracy is not stored. Later learning and delayed-recall stages should derive accuracy from raw attempt rows so analyses can be recomputed and audited.
 
 ### vocabulary_attempts
@@ -131,6 +133,8 @@ Stores raw learning-check and delayed-recall attempts.
 Learning checks cannot reference an assignment, cannot have actual retention seconds, and are never valid for fitting. They are practice data from the initial mastery workflow, not delayed-retention observations.
 
 Delayed recall attempts must reference an assignment and must have actual retention seconds. A nullable unique constraint on `test_assignment_id` enforces one delayed recall row per assignment while still allowing many learning checks with null assignment IDs.
+
+Stage 6 delayed-recall attempts are valid for fitting by default, but no curve fitting is performed. Raw summaries calculate group accuracy and retention statistics from item-level delayed-recall rows; they do not store aggregate accuracy.
 
 ### curve_models
 
@@ -178,6 +182,7 @@ This cascade policy supports deleting an unused draft design as one contained un
 - SQLite allows multiple null values in a nullable unique column, which is used for `vocabulary_attempts.test_assignment_id`.
 - SQLite does not preserve timezone metadata in the same way as PostgreSQL. The application must write UTC-aware timestamps and treat loaded timestamps as UTC.
 - SQLite check constraints cannot compare values across rows. Workflow rules that depend on state transitions or aggregate completeness remain service-layer responsibilities.
+- SQLite does not provide strong row-level locks. Uniqueness constraints plus transactional revalidation provide practical duplicate-submission protection for the local MVP, while a production multi-user deployment may require PostgreSQL and row locks.
 
 ## Service-Layer Responsibilities
 
@@ -186,6 +191,6 @@ The database foundation intentionally leaves several rules for later service cod
 - Generate and persist UTC-aware timestamps consistently.
 - Prevent hard deletion of completed designs and official curve rows.
 - Determine whether pending assignments are due.
-- Validate later status transitions and lifecycle timestamp ordering beyond `activation_review` to `active`.
-- Implement delayed recall scoring and curve fitting.
+- Validate later status transitions and lifecycle timestamp ordering beyond design completion.
+- Implement curve fitting.
 - Decide when a delayed recall attempt is valid for fitting and provide a meaningful `exclusion_reason` when it is not.

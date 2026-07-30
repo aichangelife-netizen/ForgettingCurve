@@ -161,3 +161,83 @@ class AssignmentScheduleResponse(BaseModel):
     test_design_id: int
     status: str
     groups: list[AssignmentScheduleGroupResponse]
+
+
+class DelayedRecallAssignmentResponse(BaseModel):
+    assignment_id: int
+    test_design_item_id: int
+    vocabulary_item_id: int
+    korean: str
+    group_index: int
+    target_interval_seconds: int
+    scheduled_at: datetime
+
+
+class NextDelayedRecallResponse(BaseModel):
+    available: bool
+    server_time: datetime
+    due_count: int
+    pending_count: int
+    assignment: DelayedRecallAssignmentResponse | None
+    next_scheduled_at: datetime | None = None
+
+
+class DelayedRecallSubmissionRequest(BaseModel):
+    user_answer: str
+    response_time_ms: int | None = None
+
+
+class DelayedRecallSubmissionResponse(BaseModel):
+    attempt_id: int
+    assignment_id: int
+    attempted_at: datetime
+    actual_retention_seconds: int
+    target_interval_seconds: int
+    lateness_seconds: int
+    assignment_status: str
+    group_index: int
+    group_completed_count: int
+    group_assignment_count: int
+    group_status: str
+    overall_completed_count: int
+    overall_assignment_count: int
+    design_status: str
+
+
+class DelayedRecallProgressResponse(BaseModel):
+    test_design_id: int
+    status: str
+    total_assignment_count: int
+    completed_assignment_count: int
+    pending_assignment_count: int
+    due_assignment_count: int
+    completed_group_count: int
+    total_group_count: int
+    next_scheduled_at: datetime | None
+    activated_at: datetime | None
+    completed_at: datetime | None
+
+
+class RetentionSummaryGroupResponse(BaseModel):
+    test_design_group_id: int
+    group_index: int
+    target_interval_seconds: int
+    status: str
+    assignment_count: int
+    completed_count: int
+    valid_result_count: int
+    correct_count: int | None
+    incorrect_count: int | None
+    observed_accuracy: float | None
+    mean_actual_retention_seconds: float | None
+    minimum_actual_retention_seconds: int | None
+    maximum_actual_retention_seconds: int | None
+
+
+class RetentionSummaryResponse(BaseModel):
+    test_design_id: int
+    status: str
+    complete_time_point_count: int
+    required_time_point_count_for_curve: int
+    curve_available: bool
+    groups: list[RetentionSummaryGroupResponse]

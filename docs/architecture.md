@@ -40,7 +40,7 @@ NumPy and SciPy will support offline fitting of the retention curve. Analysis sh
 
 ## Current Scope
 
-Stage 5 contains the project skeleton, database foundation, early API infrastructure, backend learning workflow, and deterministic activation scheduling:
+Stage 6 contains the project skeleton, database foundation, early API infrastructure, backend learning workflow, deterministic activation scheduling, and delayed-recall result capture:
 
 - Minimal FastAPI app with `GET /health`.
 - Basic backend health test.
@@ -60,7 +60,11 @@ Stage 5 contains the project skeleton, database foundation, early API infrastruc
 - Activation-review APIs with global assignment order.
 - Per-item `anchor_at` and calculated `scheduled_at`.
 - Automatic transition from activation review to active after all assignments are anchored.
+- Derived due delayed-recall retrieval.
+- Delayed-recall submission with actual retention seconds.
+- Assignment, group, and design completion.
+- Raw retention progress, summaries, and participant history.
 - Minimal Next.js home page.
 - Architecture documentation.
 
-The project does not yet include final research vocabulary, delayed recall submission, group completion, design completion, authentication, admin pages, participant-facing frontend pages, notifications, background jobs, or curve fitting.
+The project does not yet include final research vocabulary, forgetting-curve fitting, curve model creation, authentication, admin pages, participant-facing frontend pages, notifications, or background jobs.

@@ -11,6 +11,8 @@ All API paths are mounted under `/api`. Responses use JSON. Service-layer errors
 }
 ```
 
+The FastAPI app allows local frontend CORS for `http://localhost:3000` and `http://127.0.0.1:3000`. It does not use wildcard origins with credentials.
+
 ## Participants
 
 ### POST /api/participants

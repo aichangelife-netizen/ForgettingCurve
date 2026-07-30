@@ -8,7 +8,7 @@ The system presents Korean vocabulary prompts, collects English recall responses
 R(t) = exp(-((t / T) ** c))
 ```
 
-For the MVP, the backend and frontend are intentionally minimal. Stage 7 adds official backend curve fitting from completed delayed-recall data, append-only Personal Curve V1/V2/V3 versioning, observed retention points, predicted curve points, eligibility checks, and historical model retrieval. Participant-facing experiment pages and curve charts are not implemented yet.
+For the MVP, Stage 8 adds the complete participant-facing frontend workflow: local anonymous participant resume, design creation, learning, activation review, due delayed recall, raw summaries, official curve generation, Personal Curve V1/V2/V3 visualization, and historical curve selection.
 
 ## Directory Structure
 
@@ -43,7 +43,9 @@ For the MVP, the backend and frontend are intentionally minimal. Stage 7 adds of
 ├── docs/
 │   ├── architecture.md   # Planned architecture notes
 │   ├── curve-fitting.md
-│   └── database-schema.md
+│   ├── database-schema.md
+│   ├── frontend-workflow.md
+│   └── manual-mvp-test.md
 ├── frontend/             # Next.js TypeScript App Router app
 │   ├── app/
 │   │   ├── globals.css
@@ -79,6 +81,14 @@ cd frontend
 npm install
 ```
 
+Optional frontend API configuration:
+
+```sh
+cp .env.example .env.local
+```
+
+Do not commit real `.env` or `.env.local` files. When `NEXT_PUBLIC_API_BASE_URL` is absent, the frontend falls back to `http://127.0.0.1:8000`.
+
 ## Run Backend
 
 ```sh
@@ -105,11 +115,30 @@ The frontend is available at:
 http://localhost:3000
 ```
 
+Frontend routes:
+
+- `/`
+- `/experiment`
+- `/experiment/design`
+- `/experiment/[testDesignId]/learn`
+- `/experiment/[testDesignId]/activation`
+- `/experiment/[testDesignId]/delayed`
+- `/experiment/[testDesignId]/results`
+
 ## Run Backend Tests
 
 ```sh
 cd backend
 uv run pytest
+```
+
+## Run Frontend Checks
+
+```sh
+cd frontend
+npm run lint
+npm run test
+npm run build
 ```
 
 ## Database
@@ -147,4 +176,4 @@ Use `--update-existing` only when existing canonical English answers should be u
 
 ## API Documentation
 
-See [docs/api.md](docs/api.md) for API endpoints, [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules, and [docs/curve-fitting.md](docs/curve-fitting.md) for the official Stage 7 fitting contract.
+See [docs/api.md](docs/api.md) for API endpoints, [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules, [docs/curve-fitting.md](docs/curve-fitting.md) for the official fitting contract, [docs/frontend-workflow.md](docs/frontend-workflow.md) for participant-facing routes, and [docs/manual-mvp-test.md](docs/manual-mvp-test.md) for a manual end-to-end scenario.

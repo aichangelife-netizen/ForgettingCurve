@@ -15,7 +15,7 @@ ForgettingCurve is a local research MVP for estimating an individual's forgettin
 
 ### Frontend
 
-The frontend is a Next.js TypeScript application using the App Router. It will provide the local research interface for mastery testing, delayed recall testing, and basic progress review. Stage 7 does not add participant-facing curve pages or chart components.
+The frontend is a Next.js TypeScript application using the App Router. It provides the local research interface for participant creation, design creation, mastery testing, activation review, delayed recall testing, results review, official curve generation, and historical curve visualization.
 
 ### Backend
 
@@ -40,7 +40,7 @@ NumPy and SciPy support official backend fitting of the retention curve. Analysi
 
 ## Current Scope
 
-Stage 7 contains the project skeleton, database foundation, early API infrastructure, backend learning workflow, deterministic activation scheduling, delayed-recall result capture, and official curve-model fitting:
+Stage 8 contains the project skeleton, database foundation, early API infrastructure, backend learning workflow, deterministic activation scheduling, delayed-recall result capture, official curve-model fitting, and the participant-facing frontend:
 
 - Minimal FastAPI app with `GET /health`.
 - Basic backend health test.
@@ -69,7 +69,10 @@ Stage 7 contains the project skeleton, database foundation, early API infrastruc
 - Append-only Personal Curve V1/V2/V3 versioning in `curve_models`.
 - Historical and latest curve-model retrieval APIs.
 - Observed retention points and smooth predicted curve points.
-- Minimal Next.js home page.
+- Next.js routes for landing, dashboard, design, learning, activation review, delayed testing, results, curve generation, and curve history.
+- Typed frontend API client with backend error parsing.
+- Local MVP participant session storage using only participant ID and participant code.
+- Responsive SVG curve visualization backed by server predicted points.
 - Architecture documentation.
 
-The project does not yet include final research vocabulary, authentication, admin pages, participant-facing frontend pages, frontend curve charts, provisional curves, alternative models, confidence intervals, notifications, or background jobs.
+The project does not yet include final research vocabulary, authentication, admin pages, CSV export, provisional curves, alternative models, confidence intervals, notifications, background jobs, or public deployment.

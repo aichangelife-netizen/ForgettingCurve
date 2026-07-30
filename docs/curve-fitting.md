@@ -1,6 +1,6 @@
 # Curve Fitting
 
-Stage 7 implements the official backend fitting path for personal forgetting curves. It does not implement frontend charts, provisional curves, alternative models, confidence intervals, bootstrap analysis, model comparison, notifications, background jobs, authentication, admin pages, or CSV export.
+Stage 7 implements the official backend fitting path for personal forgetting curves. Stage 8 adds the participant-facing visualization for those official curves. The frontend does not refit data or calculate alternative curves. The project still does not implement provisional curves, alternative models, confidence intervals, bootstrap analysis, model comparison, notifications, background jobs, authentication, admin pages, or CSV export.
 
 ## Model
 
@@ -116,4 +116,4 @@ Because SQLite does not provide strong row-level locks, Stage 7 relies on unique
 
 Observed points are summaries by completed test-design group. They include correct count, total count, observed accuracy, target interval, and actual-retention statistics. Duplicate target intervals from different completed designs remain separate observed points.
 
-Predicted points are 100 smooth model points over the observed actual-retention range, using geometric spacing when the range has more than one value.
+Predicted points are 100 smooth model points over the observed actual-retention range, using geometric spacing when the range has more than one value. The Stage 8 chart maps positive actual times to logarithmic x positions and retention probabilities to linear y positions. Observed markers remain separate from the fitted line, and a table provides text-equivalent details.

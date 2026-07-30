@@ -23,7 +23,7 @@ The backend is a FastAPI application running on Python 3.12. It will own experim
 
 ### Persistence
 
-SQLite will be used for local storage. SQLAlchemy will model participants, vocabulary items, sessions, initial mastery trials, delayed retention assignments, and delayed recall trials.
+SQLite is used for local storage. SQLAlchemy 2.x typed ORM models and Alembic migrations define participants, vocabulary items, test designs, delayed retention assignment groups, design items, delayed recall assignments, raw vocabulary attempts, and official curve model rows.
 
 ### Analysis
 
@@ -40,11 +40,14 @@ NumPy and SciPy will support offline fitting of the retention curve. Analysis sh
 
 ## Current Scope
 
-Stage 1 contains only the project skeleton:
+Stage 2 contains the project skeleton plus the database foundation:
 
 - Minimal FastAPI app with `GET /health`.
 - Basic backend health test.
+- SQLAlchemy models for the research schema.
+- Alembic migration management.
+- SQLite constraint and migration tests.
 - Minimal Next.js home page.
 - Architecture documentation.
 
-The project does not yet include database tables, vocabulary data, experiment logic, authentication, or curve fitting.
+The project does not yet include vocabulary data, experiment APIs, random assignment logic, learning workflows, authentication, or curve fitting.

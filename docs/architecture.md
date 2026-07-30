@@ -40,14 +40,18 @@ NumPy and SciPy will support offline fitting of the retention curve. Analysis sh
 
 ## Current Scope
 
-Stage 2 contains the project skeleton plus the database foundation:
+Stage 3 contains the project skeleton, database foundation, and early API infrastructure:
 
 - Minimal FastAPI app with `GET /health`.
 - Basic backend health test.
 - SQLAlchemy models for the research schema.
 - Alembic migration management.
 - SQLite constraint and migration tests.
+- Exact answer normalization and scoring.
+- Demonstration vocabulary source import.
+- Anonymous participant APIs.
+- Draft test-design creation, reading, group creation, and start-learning transition APIs.
 - Minimal Next.js home page.
 - Architecture documentation.
 
-The project does not yet include vocabulary data, experiment APIs, random assignment logic, learning workflows, authentication, or curve fitting.
+The project does not yet include final research vocabulary, random assignment logic, learning attempts, mastery updates, delayed recall submission, authentication, admin pages, participant-facing frontend pages, or curve fitting.

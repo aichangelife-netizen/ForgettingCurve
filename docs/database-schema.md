@@ -2,6 +2,8 @@
 
 Stage 2 establishes the database foundation only. It does not implement API routes, learning logic, random assignment, curve fitting, frontend pages, or vocabulary seed data.
 
+Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. It does not require a new database migration.
+
 ## Configuration
 
 - Backend migrations are managed by Alembic in `backend/alembic`.
@@ -33,6 +35,8 @@ Stores Korean vocabulary prompts and their English answers.
 - `created_at`: UTC timestamp.
 
 No difficulty, part of speech, or accepted-answer list is stored in Stage 2.
+
+The Stage 3 demonstration vocabulary source stores exactly one canonical English answer per Korean word. It remains demonstration data, not final research material.
 
 ### test_designs
 
@@ -96,6 +100,8 @@ Stores delayed recall assignments.
 Composite foreign keys guarantee that the assigned item and assigned group both belong to the assignment's design.
 
 The schema does not store `due` or `missed`. An assignment is due when `status = 'pending'` and `scheduled_at <= current UTC time`.
+
+Group accuracy is not stored. Later learning and delayed-recall stages should derive accuracy from raw attempt rows so analyses can be recomputed and audited.
 
 ### vocabulary_attempts
 
@@ -171,8 +177,7 @@ The database foundation intentionally leaves several rules for later service cod
 
 - Generate and persist UTC-aware timestamps consistently.
 - Prevent hard deletion of completed designs and official curve rows.
-- Calculate `required_item_count`.
 - Determine whether pending assignments are due.
-- Validate allowed status transitions and lifecycle timestamp ordering.
+- Validate later status transitions and lifecycle timestamp ordering beyond `draft` to `learning`.
 - Implement random assignment, learning checks, delayed recall scoring, and curve fitting.
 - Decide when a delayed recall attempt is valid for fitting and provide a meaningful `exclusion_reason` when it is not.

@@ -8,7 +8,7 @@ The system will present Korean vocabulary prompts, collect English recall respon
 R(t) = exp(-((t / T) ** c))
 ```
 
-For the MVP, the backend and frontend are intentionally minimal. Stage 2 adds the SQLite database foundation, Alembic migrations, and database-level integrity tests. Experiment pages, API workflows, vocabulary data, random assignment, learning logic, and curve fitting are not implemented yet.
+For the MVP, the backend and frontend are intentionally minimal. Stage 3 adds vocabulary import infrastructure, exact answer scoring, anonymous participant APIs, and draft test-design APIs. Experiment pages, learning attempts, random assignment, delayed recall, and curve fitting are not implemented yet.
 
 ## Directory Structure
 
@@ -16,11 +16,20 @@ For the MVP, the backend and frontend are intentionally minimal. Stage 2 adds th
 .
 ├── backend/              # FastAPI API managed with uv
 │   ├── app/
+│   │   ├── api/          # FastAPI API routers
 │   │   ├── core/         # Application constants
 │   │   ├── db/           # SQLAlchemy models and database setup
+│   │   ├── schemas/      # API request and response schemas
+│   │   ├── services/     # Business rules and import/scoring services
 │   │   └── main.py       # Minimal FastAPI app
 │   ├── alembic/          # Database migrations
+│   ├── data/
+│   │   └── vocabulary.json
+│   ├── scripts/
+│   │   └── import_vocabulary.py
 │   ├── tests/
+│   │   ├── test_answer_scoring.py
+│   │   ├── test_api_stage3.py
 │   │   ├── test_database_constraints.py
 │   │   ├── test_health.py
 │   │   └── test_migrations.py
@@ -119,3 +128,18 @@ FORGETTING_CURVE_DATABASE_URL=sqlite:////tmp/forgetting_curve_stage2.sqlite3 uv 
 ```
 
 See [docs/database-schema.md](docs/database-schema.md) for the schema, delete policy, and SQLite notes.
+
+## Import Demonstration Vocabulary
+
+The source file [backend/data/vocabulary.json](backend/data/vocabulary.json) contains 30 demonstration Korean-English items for development and review. It is not final research material.
+
+```sh
+cd backend
+uv run python scripts/import_vocabulary.py
+```
+
+Use `--update-existing` only when existing canonical English answers should be updated.
+
+## API Documentation
+
+See [docs/api.md](docs/api.md) for Stage 3 API endpoints and [docs/vocabulary-policy.md](docs/vocabulary-policy.md) for exact answer checking rules.

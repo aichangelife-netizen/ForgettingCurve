@@ -122,7 +122,8 @@ class TestDesign(Base):
         back_populates="test_design", cascade="all, delete-orphan"
     )
     triggered_curve_model: Mapped[CurveModel | None] = relationship(
-        back_populates="trigger_test_design"
+        back_populates="trigger_test_design",
+        overlaps="curve_models",
     )
 
     @property
@@ -167,7 +168,10 @@ class TestDesignGroup(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     test_design: Mapped[TestDesign] = relationship(back_populates="groups")
-    assignments: Mapped[list[TestAssignment]] = relationship(back_populates="test_design_group")
+    assignments: Mapped[list[TestAssignment]] = relationship(
+        back_populates="test_design_group",
+        overlaps="assignments",
+    )
 
 
 class TestDesignItem(Base):
@@ -217,8 +221,14 @@ class TestDesignItem(Base):
 
     test_design: Mapped[TestDesign] = relationship(back_populates="items")
     vocabulary_item: Mapped[VocabularyItem] = relationship(back_populates="test_design_items")
-    assignment: Mapped[TestAssignment | None] = relationship(back_populates="test_design_item")
-    attempts: Mapped[list[VocabularyAttempt]] = relationship(back_populates="test_design_item")
+    assignment: Mapped[TestAssignment | None] = relationship(
+        back_populates="test_design_item",
+        overlaps="assignments,test_design",
+    )
+    attempts: Mapped[list[VocabularyAttempt]] = relationship(
+        back_populates="test_design_item",
+        overlaps="vocabulary_attempt",
+    )
 
 
 class TestAssignment(Base):
@@ -286,18 +296,25 @@ class TestAssignment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    test_design: Mapped[TestDesign] = relationship(back_populates="assignments", foreign_keys=[test_design_id])
+    test_design: Mapped[TestDesign] = relationship(
+        back_populates="assignments",
+        foreign_keys=[test_design_id],
+        overlaps="assignment,assignments",
+    )
     test_design_item: Mapped[TestDesignItem] = relationship(
         back_populates="assignment",
         foreign_keys=[test_design_item_id, test_design_id],
-        overlaps="assignments,test_design",
+        overlaps="assignment,assignments,test_design",
     )
     test_design_group: Mapped[TestDesignGroup] = relationship(
         back_populates="assignments",
         foreign_keys=[test_design_group_id, test_design_id],
-        overlaps="assignments,test_design",
+        overlaps="assignment,assignments,test_design,test_design_item",
     )
-    vocabulary_attempt: Mapped[VocabularyAttempt | None] = relationship(back_populates="test_assignment")
+    vocabulary_attempt: Mapped[VocabularyAttempt | None] = relationship(
+        back_populates="test_assignment",
+        overlaps="attempts,test_design_item",
+    )
 
 
 class VocabularyAttempt(Base):
@@ -364,6 +381,7 @@ class VocabularyAttempt(Base):
     test_design_item: Mapped[TestDesignItem] = relationship(
         back_populates="attempts",
         foreign_keys=[test_design_item_id],
+        overlaps="vocabulary_attempt",
     )
     test_assignment: Mapped[TestAssignment | None] = relationship(
         back_populates="vocabulary_attempt",
@@ -432,8 +450,12 @@ class CurveModel(Base):
     data_cutoff_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     fitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
-    participant: Mapped[Participant] = relationship(back_populates="curve_models")
+    participant: Mapped[Participant] = relationship(
+        back_populates="curve_models",
+        overlaps="triggered_curve_model",
+    )
     trigger_test_design: Mapped[TestDesign] = relationship(
         back_populates="triggered_curve_model",
         foreign_keys=[trigger_test_design_id, participant_id],
+        overlaps="curve_models,participant",
     )

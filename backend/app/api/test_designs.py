@@ -3,6 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.schemas.test_designs import (
+    ActivationProgressResponse,
+    ActivationReviewCompletionResponse,
+    ActivationReviewNextResponse,
+    AssignmentInitializationResponse,
+    AssignmentScheduleResponse,
     LearningAttemptRequest,
     LearningAttemptResponse,
     LearningMaterialsResponse,
@@ -11,6 +16,12 @@ from app.schemas.test_designs import (
     TestDesignCreateRequest,
     TestDesignResponse,
 )
+from app.services.activation_review import (
+    complete_activation_review_assignment,
+    get_activation_progress,
+    get_activation_review_next,
+)
+from app.services.assignment import get_assignment_schedule, initialize_assignments
 from app.services.learning import (
     get_learning_materials,
     get_learning_progress,
@@ -94,3 +105,53 @@ def get_learning_progress_endpoint(
     session: Session = Depends(get_db),
 ) -> LearningProgressResponse:
     return LearningProgressResponse.model_validate(get_learning_progress(session, test_design_id))
+
+
+@router.post("/{test_design_id}/initialize-assignments", response_model=AssignmentInitializationResponse)
+def initialize_assignments_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> AssignmentInitializationResponse:
+    return AssignmentInitializationResponse.model_validate(initialize_assignments(session, test_design_id))
+
+
+@router.get("/{test_design_id}/activation-review/next", response_model=ActivationReviewNextResponse)
+def get_activation_review_next_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> ActivationReviewNextResponse:
+    return ActivationReviewNextResponse.model_validate(get_activation_review_next(session, test_design_id))
+
+
+@router.post(
+    "/{test_design_id}/activation-review/{assignment_id}/complete",
+    response_model=ActivationReviewCompletionResponse,
+)
+def complete_activation_review_assignment_endpoint(
+    test_design_id: int,
+    assignment_id: int,
+    session: Session = Depends(get_db),
+) -> ActivationReviewCompletionResponse:
+    return ActivationReviewCompletionResponse.model_validate(
+        complete_activation_review_assignment(
+            session,
+            test_design_id=test_design_id,
+            assignment_id=assignment_id,
+        )
+    )
+
+
+@router.get("/{test_design_id}/activation-review/progress", response_model=ActivationProgressResponse)
+def get_activation_progress_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> ActivationProgressResponse:
+    return ActivationProgressResponse.model_validate(get_activation_progress(session, test_design_id))
+
+
+@router.get("/{test_design_id}/assignment-schedule", response_model=AssignmentScheduleResponse)
+def get_assignment_schedule_endpoint(
+    test_design_id: int,
+    session: Session = Depends(get_db),
+) -> AssignmentScheduleResponse:
+    return AssignmentScheduleResponse.model_validate(get_assignment_schedule(session, test_design_id))

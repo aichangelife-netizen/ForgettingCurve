@@ -8,7 +8,7 @@ The system will present Korean vocabulary prompts, collect English recall respon
 R(t) = exp(-((t / T) ** c))
 ```
 
-For the MVP, the backend and frontend are intentionally minimal. Stage 4 adds the backend learning workflow: fixed learning-pool initialization, study materials, learning checks, learning attempts, mastery tracking, progress reporting, and automatic transition to assigning. Experiment pages, assignment creation, delayed recall, and curve fitting are not implemented yet.
+For the MVP, the backend and frontend are intentionally minimal. Stage 5 adds deterministic retention-group assignment, activation review, per-item anchor timestamps, delayed-test scheduling, and schedule summaries. Experiment pages, delayed recall submission, and curve fitting are not implemented yet.
 
 ## Directory Structure
 

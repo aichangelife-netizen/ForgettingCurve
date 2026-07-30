@@ -217,6 +217,74 @@ Returns aggregate learning progress calculated from persisted rows:
 
 This endpoint is available for `learning` and `assigning` designs so the final learning state remains readable after automatic transition.
 
+### POST /api/test-designs/{test_design_id}/initialize-assignments
+
+Initializes deterministic retention-group assignments for an `assigning` design and transitions it to `activation_review`.
+
+The service validates that the fixed learning pool contains exactly `required_item_count` mastered items, that the design has exactly `group_count` pending groups with unique positive intervals, and that no assignments already exist.
+
+Assignment uses the stored `random_seed` with the separate namespace `group_assignment`:
+
+```text
+SHA256(f"{random_seed}:group_assignment")
+```
+
+The service sorts `test_design_item.id` values, shuffles them with a local `random.Random`, loads groups by `group_index`, and assigns shuffled items round-robin across groups. This gives every group exactly `items_per_group` assignments and interleaves retention intervals during activation review.
+
+Persisted `test_assignments` become the source of truth. The service never recomputes or reshuffles them after initialization.
+
+Response:
+
+```json
+{
+  "test_design_id": 1,
+  "status": "activation_review",
+  "assignment_count": 100,
+  "group_count": 5,
+  "items_per_group": 20,
+  "random_seed": 12345,
+  "groups": [
+    {
+      "test_design_group_id": 1,
+      "group_index": 1,
+      "interval_seconds": 600,
+      "assignment_count": 20
+    }
+  ],
+  "activation_review_started_at": "UTC timestamp"
+}
+```
+
+This endpoint does not expose English answers and does not create vocabulary attempts.
+
+### GET /api/test-designs/{test_design_id}/activation-review/next
+
+Returns the awaiting-anchor assignment with the lowest global `assignment_order`.
+
+Activation review is not a test. It is an explicit review step, so the response includes both `korean` and `english_answer`. No `vocabulary_attempt` rows are created.
+
+### POST /api/test-designs/{test_design_id}/activation-review/{assignment_id}/complete
+
+Completes one activation-review item in global assignment order. The server generates `anchor_at`, calculates `scheduled_at = anchor_at + interval_seconds`, changes the assignment from `awaiting_anchor` to `pending`, and leaves `completed_at` null.
+
+Participants cannot skip ahead. Repeated completion for the same assignment returns a conflict and never overwrites `anchor_at` or `scheduled_at`.
+
+When the final assignment is anchored, the design transitions from `activation_review` to `active` and stores `activated_at`. Assignment completion and the final design transition happen in one transaction.
+
+This endpoint does not score answers and does not create delayed-recall rows.
+
+### GET /api/test-designs/{test_design_id}/activation-review/progress
+
+Returns activation progress calculated from persisted assignments. It is readable in both `activation_review` and `active` status.
+
+### GET /api/test-designs/{test_design_id}/assignment-schedule
+
+Returns read-only group schedule summaries in `group_index` order. It includes assignment counts, awaiting-anchor counts, pending counts, completed counts, and earliest/latest scheduled timestamps. It does not expose English answers and does not calculate group accuracy.
+
+No persistent due status is stored. A pending assignment is due only when `status = pending` and `scheduled_at <= current UTC time`. Due retrieval and delayed answer submission remain Stage 6.
+
+Stage 6 delayed tests should use the actual elapsed time from each assignment's `anchor_at` and delayed response timestamp, not only the target `interval_seconds`.
+
 ### GET /api/participants/{participant_id}/test-designs/current
 
 Returns the participant's current non-terminal design. Non-terminal statuses are `draft`, `learning`, `assigning`, `activation_review`, and `active`.
@@ -225,4 +293,4 @@ If the participant exists but has no current design, the API returns `404` with 
 
 ## Not Yet Implemented
 
-Stage 4 does not implement test group assignment, `test_assignment` creation, retention interval scheduling, activation review, anchor handling, delayed recall submission, curve fitting, curve model creation, authentication, admin pages, or participant-facing frontend pages.
+Stage 5 does not implement delayed recall submission, delayed-recall `vocabulary_attempt` rows, group accuracy, group completion, design completion, curve fitting, curve model creation, notifications, background jobs, authentication, admin pages, or participant-facing frontend pages.

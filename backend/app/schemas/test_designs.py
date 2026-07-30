@@ -92,3 +92,72 @@ class LearningProgressResponse(BaseModel):
     total_attempt_count: int
     correct_attempt_count: int
     learning_started_at: datetime | None
+
+
+class AssignmentInitializationGroupResponse(BaseModel):
+    test_design_group_id: int
+    group_index: int
+    interval_seconds: int
+    assignment_count: int
+
+
+class AssignmentInitializationResponse(BaseModel):
+    test_design_id: int
+    status: str
+    assignment_count: int
+    group_count: int
+    items_per_group: int
+    random_seed: int
+    groups: list[AssignmentInitializationGroupResponse]
+    activation_review_started_at: datetime
+
+
+class ActivationReviewNextResponse(BaseModel):
+    assignment_id: int
+    assignment_order: int
+    total_assignment_count: int
+    completed_activation_count: int
+    remaining_activation_count: int
+    vocabulary_item_id: int
+    korean: str
+    english_answer: str
+    group_index: int
+    interval_seconds: int
+
+
+class ActivationReviewCompletionResponse(BaseModel):
+    assignment_id: int
+    anchor_at: datetime
+    scheduled_at: datetime
+    interval_seconds: int
+    remaining_activation_count: int
+    design_status: str
+    activated_at: datetime | None
+
+
+class ActivationProgressResponse(BaseModel):
+    test_design_id: int
+    status: str
+    total_assignment_count: int
+    anchored_assignment_count: int
+    remaining_activation_count: int
+    activation_review_started_at: datetime | None
+    activated_at: datetime | None
+
+
+class AssignmentScheduleGroupResponse(BaseModel):
+    test_design_group_id: int
+    group_index: int
+    interval_seconds: int
+    assignment_count: int
+    awaiting_anchor_count: int
+    pending_count: int
+    completed_count: int
+    earliest_scheduled_at: datetime | None
+    latest_scheduled_at: datetime | None
+
+
+class AssignmentScheduleResponse(BaseModel):
+    test_design_id: int
+    status: str
+    groups: list[AssignmentScheduleGroupResponse]

@@ -2,7 +2,7 @@
 
 Stage 2 establishes the database foundation only. It does not implement API routes, learning logic, random assignment, curve fitting, frontend pages, or vocabulary seed data.
 
-Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. It does not require a new database migration.
+Stage 3 uses this schema for vocabulary import, anonymous participants, draft test-design creation, test-design group creation, and the draft-to-learning transition. Stage 4 uses the same schema for fixed learning pools, learning-check attempts, mastery tracking, and automatic transition to assigning. Stage 5 uses it for deterministic group assignment, activation review, per-item `anchor_at`, and delayed-test scheduling. It does not require a new database migration.
 
 ## Configuration
 
@@ -103,6 +103,10 @@ Stores delayed recall assignments.
 
 Composite foreign keys guarantee that the assigned item and assigned group both belong to the assignment's design.
 
+Stage 5 creates assignments after all learning-pool items are mastered. It sorts design items by `id`, shuffles them with a deterministic `group_assignment` seed namespace, and assigns them to groups round-robin in `group_index` order. The `assignment_order` values are globally unique within the design at the service layer and cover `1` through `required_item_count`.
+
+During activation review, each assignment receives a server-generated `anchor_at`. The service calculates `scheduled_at = anchor_at + interval_seconds`. Each assignment can have a different anchor timestamp because activation review may take several minutes.
+
 The schema does not store `due` or `missed`. An assignment is due when `status = 'pending'` and `scheduled_at <= current UTC time`.
 
 Group accuracy is not stored. Later learning and delayed-recall stages should derive accuracy from raw attempt rows so analyses can be recomputed and audited.
@@ -182,6 +186,6 @@ The database foundation intentionally leaves several rules for later service cod
 - Generate and persist UTC-aware timestamps consistently.
 - Prevent hard deletion of completed designs and official curve rows.
 - Determine whether pending assignments are due.
-- Validate later status transitions and lifecycle timestamp ordering beyond `learning` to `assigning`.
-- Implement test group assignment, delayed recall scoring, and curve fitting.
+- Validate later status transitions and lifecycle timestamp ordering beyond `activation_review` to `active`.
+- Implement delayed recall scoring and curve fitting.
 - Decide when a delayed recall attempt is valid for fitting and provide a meaningful `exclusion_reason` when it is not.

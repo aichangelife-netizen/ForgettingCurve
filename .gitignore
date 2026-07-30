@@ -30,3 +30,6 @@ coverage/
 # IDE
 .vscode/
 .idea/
+
+# Next.js generated TypeScript declarations
+frontend/next-env.d.ts

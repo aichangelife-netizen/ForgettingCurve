@@ -3,7 +3,8 @@ import { formatDuration, formatPercentage } from "@/lib/time-format";
 
 const WIDTH = 760;
 const HEIGHT = 360;
-const PADDING = { left: 70, right: 26, top: 30, bottom: 58 };
+const PADDING = { left: 70, right: 26, top: 30, bottom: 96 };
+const X_TICK_LABEL_MIN_GAP = 54;
 
 export function logXPosition(timeSeconds: number, minTime: number, maxTime: number): number {
   const left = PADDING.left;
@@ -30,6 +31,33 @@ function observedTimes(points: ObservedPoint[]): number[] {
 
 function predictedTimes(points: PredictedPoint[]): number[] {
   return points.map((point) => point.time_seconds).filter((value) => Number.isFinite(value) && value > 0);
+}
+
+function xAxisTicks(points: ObservedPoint[], minTime: number, maxTime: number) {
+  const seenLabels = new Set<string>();
+  let lastLabelX = -Infinity;
+  return points
+    .map((point) => {
+      const timeSeconds = point.mean_actual_retention_seconds;
+      return {
+        id: `${point.test_design_id}-${point.test_design_group_id}`,
+        x: logXPosition(timeSeconds, minTime, maxTime),
+        label: formatDuration(timeSeconds),
+        timeSeconds,
+      };
+    })
+    .filter((tick) => Number.isFinite(tick.timeSeconds) && tick.timeSeconds > 0)
+    .sort((left, right) => left.x - right.x)
+    .map((tick) => {
+      const duplicate = seenLabels.has(tick.label);
+      const overlapsPrevious = tick.x - lastLabelX < X_TICK_LABEL_MIN_GAP;
+      const showLabel = !duplicate && !overlapsPrevious;
+      if (showLabel) {
+        seenLabels.add(tick.label);
+        lastLabelX = tick.x;
+      }
+      return { ...tick, showLabel };
+    });
 }
 
 export function curvePath(points: PredictedPoint[], minTime: number, maxTime: number): string {
@@ -63,6 +91,8 @@ export function CurveChart({
   const minTime = Math.min(...allTimes);
   const maxTime = Math.max(...allTimes);
   const path = curvePath(predictedPoints, minTime, maxTime);
+  const axisY = HEIGHT - PADDING.bottom;
+  const xTicks = xAxisTicks(observedPoints, minTime, maxTime);
 
   return (
     <section className="panel">
@@ -74,8 +104,8 @@ export function CurveChart({
             Observed retention markers are plotted against actual retention time, and the fitted curve is drawn from
             backend predicted points.
           </desc>
-          <line x1={PADDING.left} y1={HEIGHT - PADDING.bottom} x2={WIDTH - PADDING.right} y2={HEIGHT - PADDING.bottom} />
-          <line x1={PADDING.left} y1={PADDING.top} x2={PADDING.left} y2={HEIGHT - PADDING.bottom} />
+          <line x1={PADDING.left} y1={axisY} x2={WIDTH - PADDING.right} y2={axisY} />
+          <line x1={PADDING.left} y1={PADDING.top} x2={PADDING.left} y2={axisY} />
           {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
             <g key={tick}>
               <line
@@ -90,7 +120,17 @@ export function CurveChart({
               </text>
             </g>
           ))}
-          <text x={WIDTH / 2} y={HEIGHT - 16} textAnchor="middle">
+          {xTicks.map((tick) => (
+            <g key={tick.id} className="x-axis-tick">
+              <line x1={tick.x} y1={axisY} x2={tick.x} y2={axisY + 7} />
+              {tick.showLabel ? (
+                <text x={tick.x} y={axisY + 28} textAnchor="middle">
+                  {tick.label}
+                </text>
+              ) : null}
+            </g>
+          ))}
+          <text x={WIDTH / 2} y={HEIGHT - 18} textAnchor="middle">
             Actual retention time
           </text>
           <text transform={`translate(18 ${HEIGHT / 2}) rotate(-90)`} textAnchor="middle">

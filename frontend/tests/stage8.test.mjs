@@ -176,6 +176,18 @@ test("curve component renders observed markers, predicted line, empty state, and
   assert.match(component, /Observed Point Details|Observed retention/);
 });
 
+test("curve component renders x-axis labels from observed mean retention times", () => {
+  const component = source("components/curve/CurveChart.tsx");
+  assert.match(component, /className="x-axis-tick"/);
+  assert.match(component, /mean_actual_retention_seconds/);
+  assert.match(component, /label: formatDuration\(timeSeconds\)/);
+  assert.match(component, /X_TICK_LABEL_MIN_GAP/);
+  assert.match(component, /seenLabels\.has\(tick\.label\)/);
+  assert.match(component, /overlapsPrevious/);
+  assert.match(component, /axisY \+ 28/);
+  assert.match(component, /HEIGHT - 18/);
+});
+
 test("curve history selection requests the selected version", () => {
   const page = source("app/experiment/[testDesignId]/results/page.tsx");
   assert.match(page, /getCurveModelVersion\(session\.participantId, version\)/);

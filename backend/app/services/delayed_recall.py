@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -15,16 +15,7 @@ from app.db.models import (
 )
 from app.services.answer_scoring import check_answer, normalize_answer
 from app.services.exceptions import ConflictError, NotFoundError, ValidationServiceError
-
-
-def as_utc(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
-    return value.astimezone(UTC)
-
-
-def elapsed_seconds(later: datetime, earlier: datetime) -> int:
-    return int((as_utc(later) - as_utc(earlier)).total_seconds())
+from app.services.time import as_utc, elapsed_seconds
 
 
 def _get_design(session: Session, test_design_id: int) -> TestDesign:
@@ -100,16 +91,20 @@ def get_next_due_delayed_recall(session: Session, test_design_id: int) -> dict:
     if assignment is None:
         return {
             "available": False,
-            "server_time": server_time,
+            "server_time": as_utc(server_time),
             "due_count": 0,
             "pending_count": pending_count,
             "assignment": None,
-            "next_scheduled_at": _next_scheduled_at(session, test_design_id, server_time),
+            "next_scheduled_at": (
+                as_utc(next_scheduled_at)
+                if (next_scheduled_at := _next_scheduled_at(session, test_design_id, server_time)) is not None
+                else None
+            ),
         }
 
     return {
         "available": True,
-        "server_time": server_time,
+        "server_time": as_utc(server_time),
         "due_count": due_count,
         "pending_count": pending_count,
         "assignment": {
@@ -119,7 +114,7 @@ def get_next_due_delayed_recall(session: Session, test_design_id: int) -> dict:
             "korean": assignment.test_design_item.vocabulary_item.korean,
             "group_index": assignment.test_design_group.group_index,
             "target_interval_seconds": assignment.test_design_group.interval_seconds,
-            "scheduled_at": assignment.scheduled_at,
+            "scheduled_at": as_utc(assignment.scheduled_at),
         },
         "next_scheduled_at": None,
     }
@@ -264,7 +259,7 @@ def _submission_response(
     return {
         "attempt_id": attempt.id,
         "assignment_id": assignment.id,
-        "attempted_at": attempt.attempted_at,
+        "attempted_at": as_utc(attempt.attempted_at),
         "actual_retention_seconds": attempt.actual_retention_seconds,
         "target_interval_seconds": assignment.test_design_group.interval_seconds,
         "lateness_seconds": max(0, elapsed_seconds(attempt.attempted_at, assignment.scheduled_at)),
@@ -313,7 +308,11 @@ def get_delayed_recall_progress(session: Session, test_design_id: int) -> dict:
         "due_assignment_count": _due_count(session, test_design_id, server_time),
         "completed_group_count": completed_group_count,
         "total_group_count": total_group_count,
-        "next_scheduled_at": _next_scheduled_at(session, test_design_id, server_time),
-        "activated_at": design.activated_at,
-        "completed_at": design.completed_at,
+        "next_scheduled_at": (
+            as_utc(next_scheduled_at)
+            if (next_scheduled_at := _next_scheduled_at(session, test_design_id, server_time)) is not None
+            else None
+        ),
+        "activated_at": as_utc(design.activated_at) if design.activated_at is not None else None,
+        "completed_at": as_utc(design.completed_at) if design.completed_at is not None else None,
     }

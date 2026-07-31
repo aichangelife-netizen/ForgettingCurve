@@ -8,6 +8,7 @@ from app.db.database import utc_now
 from app.db.enums import TestAssignmentStatus, TestDesignStatus
 from app.db.models import TestAssignment, TestDesign, TestDesignItem
 from app.services.exceptions import ConflictError, NotFoundError
+from app.services.time import as_utc
 
 
 def _get_design(session: Session, test_design_id: int) -> TestDesign:
@@ -143,12 +144,12 @@ def complete_activation_review_assignment(
 
             response = {
                 "assignment_id": assignment.id,
-                "anchor_at": assignment.anchor_at,
-                "scheduled_at": assignment.scheduled_at,
+                "anchor_at": as_utc(assignment.anchor_at),
+                "scheduled_at": as_utc(assignment.scheduled_at),
                 "interval_seconds": interval_seconds,
                 "remaining_activation_count": remaining,
                 "design_status": design.status.value,
-                "activated_at": activated_at,
+                "activated_at": as_utc(activated_at) if activated_at is not None else None,
             }
     except IntegrityError as exc:
         raise ConflictError("activation_integrity_conflict", "Activation review item could not be completed.") from exc
@@ -192,6 +193,8 @@ def get_activation_progress(session: Session, test_design_id: int) -> dict:
         "total_assignment_count": total,
         "anchored_assignment_count": anchored,
         "remaining_activation_count": remaining,
-        "activation_review_started_at": design.activation_review_started_at,
-        "activated_at": design.activated_at,
+        "activation_review_started_at": (
+            as_utc(design.activation_review_started_at) if design.activation_review_started_at is not None else None
+        ),
+        "activated_at": as_utc(design.activated_at) if design.activated_at is not None else None,
     }

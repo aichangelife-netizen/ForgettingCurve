@@ -1,11 +1,13 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+
+from app.schemas.base import APIModel
 
 from app.schemas.test_designs import RetentionSummaryGroupResponse
 
 
-class ParticipantResponse(BaseModel):
+class ParticipantResponse(APIModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -13,7 +15,7 @@ class ParticipantResponse(BaseModel):
     created_at: datetime
 
 
-class ParticipantRetentionDesignResponse(BaseModel):
+class ParticipantRetentionDesignResponse(APIModel):
     test_design_id: int
     status: str
     created_at: datetime
@@ -25,6 +27,6 @@ class ParticipantRetentionDesignResponse(BaseModel):
     groups: list[RetentionSummaryGroupResponse]
 
 
-class ParticipantRetentionHistoryResponse(BaseModel):
+class ParticipantRetentionHistoryResponse(APIModel):
     participant_id: int
     designs: list[ParticipantRetentionDesignResponse]

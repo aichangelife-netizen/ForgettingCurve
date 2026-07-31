@@ -18,17 +18,46 @@ export function formatDuration(seconds: number): string {
   return `${rounded} ${Math.abs(rounded) === 1 ? "second" : "seconds"}`;
 }
 
-export function formatDateTime(timestamp: string | null): string {
+const TIMEZONE_SUFFIX_PATTERN = /(Z|[+-]\d{2}:?\d{2})$/i;
+
+export function parseUtcTimestamp(timestamp: string | null): Date | null {
+  if (!timestamp) return null;
+  const trimmed = timestamp.trim();
+  if (!trimmed) return null;
+  const normalized = TIMEZONE_SUFFIX_PATTERN.test(trimmed) ? trimmed : `${trimmed}Z`;
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function formatDateTime(
+  timestamp: string | null,
+  options: { locale?: string; timeZone?: string } = {},
+): string {
+  const date = parseUtcTimestamp(timestamp);
   if (!timestamp) return "Not scheduled";
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return "Invalid date";
-  return date.toLocaleString();
+  if (!date) return "Invalid date";
+  const parts = new Intl.DateTimeFormat(options.locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZone: options.timeZone,
+    timeZoneName: "shortOffset",
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+  const zone = value("timeZoneName");
+  return `${value("year")}-${value("month")}-${value("day")} ${value("hour")}:${value("minute")}:${value(
+    "second",
+  )}${zone ? ` ${zone}` : ""}`;
 }
 
 export function formatCountdown(targetTimestamp: string | null, now: Date = new Date()): string {
   if (!targetTimestamp) return "No scheduled test";
-  const target = new Date(targetTimestamp);
-  if (Number.isNaN(target.getTime())) return "Invalid scheduled time";
+  const target = parseUtcTimestamp(targetTimestamp);
+  if (!target) return "Invalid scheduled time";
   const seconds = Math.max(0, Math.ceil((target.getTime() - now.getTime()) / 1000));
   if (seconds === 0) return "Due now";
   return `${formatDuration(seconds)} remaining`;

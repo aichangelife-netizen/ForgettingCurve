@@ -271,6 +271,8 @@ Completes one activation-review item in global assignment order. The server gene
 
 Participants cannot skip ahead. Repeated completion for the same assignment returns a conflict and never overwrites `anchor_at` or `scheduled_at`.
 
+Timestamp fields are transported as UTC API values with an explicit `Z` or UTC offset. Clients should display them in the browser's local timezone and should not add a fixed offset manually.
+
 When the final assignment is anchored, the design transitions from `activation_review` to `active` and stores `activated_at`. Assignment completion and the final design transition happen in one transaction.
 
 This endpoint does not score answers and does not create delayed-recall rows.
@@ -320,6 +322,8 @@ The server rejects early submissions, accepts late submissions, captures `attemp
 During active delayed testing, no corrective feedback is returned. The response does not include the canonical answer, normalized canonical answer, or `is_correct`.
 
 `lateness_seconds` is calculated only for the response as `max(0, attempted_at - scheduled_at)`. It is not stored.
+
+`actual_retention_seconds` remains the server-side elapsed time from `anchor_at` to `attempted_at`; browser-local display formatting does not affect research timestamps or due-state calculation.
 
 After each submission, the service checks whether the assignment's group is complete. A group completes only when all assignments in that group are completed and each has exactly one valid delayed-recall attempt. After that, the service checks whether the whole design is complete. Delayed-recall submission does not create `curve_models` rows or fit a curve automatically.
 

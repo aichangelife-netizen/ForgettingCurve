@@ -47,6 +47,8 @@ Activation review is not a test. It shows Korean and English together, and each 
 
 Delayed recall uses backend due state. When no item is due, the page shows the next scheduled time, a countdown, and a refresh button, with modest polling while the page is open. When an item is due, it shows only the Korean word. After submission, it shows only `Response recorded.` It never displays correctness or the canonical answer during an active experiment.
 
+All API timestamps are UTC transport values. The frontend parses them through the shared UTC timestamp helper; if an older response is missing a timezone suffix, the helper temporarily treats it as UTC by appending `Z`. Visible timestamps are formatted with `Intl.DateTimeFormat` in the browser's local timezone and include a timezone abbreviation or UTC offset. Countdown and due-time comparison text use the same parser as visible date-time labels.
+
 ## Results And Curves
 
 The results page displays raw retention summaries first. Partial and complete time points are labeled separately. If fewer than five complete time points exist, it displays the insufficient-data message and does not render a provisional curve.

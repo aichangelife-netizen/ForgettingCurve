@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import os
 from sqlite3 import Connection as SQLiteConnection
 
@@ -12,7 +12,7 @@ DEFAULT_DATABASE_URL = "sqlite:///./forgetting_curve.sqlite3"
 
 
 def utc_now() -> datetime:
-    return datetime.now(UTC)
+    return datetime.now(timezone.utc)
 
 
 def get_database_url() -> str:

@@ -1,7 +1,9 @@
-from datetime import timedelta
+import re
+from datetime import datetime, timedelta, timezone
 
 import sqlalchemy as sa
 
+import app.services.delayed_recall as delayed_recall_service
 from app.db.database import utc_now
 from app.db.enums import (
     TestAssignmentStatus as AssignmentStatus,
@@ -123,6 +125,10 @@ def submit(api_client, design_id: int, assignment_id: int, answer: str, response
     )
 
 
+def assert_utc_suffix(timestamp: str) -> None:
+    assert re.search(r"(Z|[+-]\d{2}:\d{2})$", timestamp)
+
+
 def complete_group(api_client, db_session, design: Design, group_index: int = 1) -> None:
     for assignment in assignments(db_session, design.id):
         if assignment.test_design_group.group_index == group_index and assignment.status == AssignmentStatus.PENDING:
@@ -165,6 +171,45 @@ def test_next_due_returns_available_false_for_future_assignments(api_client, db_
     assert body["pending_count"] == 4
     assert body["assignment"] is None
     assert body["next_scheduled_at"] is not None
+
+
+def test_delayed_timestamp_responses_include_utc_timezone(api_client, db_session) -> None:
+    _, future_design = create_active_design(
+        db_session,
+        participant_code="P-STAGE606",
+        items_per_group=1,
+        intervals=[60],
+        due_offsets=[600],
+    )
+    future_next = api_client.get(f"/api/test-designs/{future_design.id}/delayed-recalls/next")
+    future_progress = api_client.get(f"/api/test-designs/{future_design.id}/delayed-recalls/progress")
+
+    assert future_next.status_code == 200
+    assert_utc_suffix(future_next.json()["server_time"])
+    assert_utc_suffix(future_next.json()["next_scheduled_at"])
+    assert future_progress.status_code == 200
+    assert_utc_suffix(future_progress.json()["next_scheduled_at"])
+    assert_utc_suffix(future_progress.json()["activated_at"])
+
+    _, due_design = create_active_design(
+        db_session,
+        participant_code="P-STAGE607",
+        items_per_group=1,
+        intervals=[60],
+        due_offsets=[-1],
+    )
+    assignment = assignments(db_session, due_design.id)[0]
+    due_next = api_client.get(f"/api/test-designs/{due_design.id}/delayed-recalls/next")
+    submission = submit(api_client, due_design.id, assignment.id, answer_for_assignment(db_session, assignment))
+    completed_progress = api_client.get(f"/api/test-designs/{due_design.id}/delayed-recalls/progress")
+
+    assert due_next.status_code == 200
+    assert_utc_suffix(due_next.json()["server_time"])
+    assert_utc_suffix(due_next.json()["assignment"]["scheduled_at"])
+    assert submission.status_code == 200
+    assert_utc_suffix(submission.json()["attempted_at"])
+    assert completed_progress.status_code == 200
+    assert_utc_suffix(completed_progress.json()["completed_at"])
 
 
 def test_next_due_rejects_non_active_design_and_is_read_only(api_client, db_session) -> None:
@@ -228,6 +273,27 @@ def test_negative_response_time_and_early_submission_are_rejected(api_client, db
     assert early_response.status_code == 409
     assert early_response.json()["detail"]["code"] == "assignment_not_yet_due"
     assert db_session.scalar(sa.select(sa.func.count()).select_from(VocabularyAttempt)) == 0
+
+
+def test_delayed_submission_becomes_due_at_exact_scheduled_instant(api_client, db_session, monkeypatch) -> None:
+    _, design = create_active_design(db_session, items_per_group=1, intervals=[60], due_offsets=[600])
+    assignment = assignments(db_session, design.id)[0]
+    anchor_at = datetime(2026, 7, 30, 23, 30, 47, tzinfo=timezone.utc)
+    scheduled_at = datetime(2026, 7, 30, 23, 31, 47, tzinfo=timezone.utc)
+    assignment.anchor_at = anchor_at
+    assignment.scheduled_at = scheduled_at
+    db_session.commit()
+
+    monkeypatch.setattr(delayed_recall_service, "utc_now", lambda: scheduled_at - timedelta(microseconds=1))
+    early_response = submit(api_client, design.id, assignment.id, answer_for_assignment(db_session, assignment))
+
+    monkeypatch.setattr(delayed_recall_service, "utc_now", lambda: scheduled_at)
+    due_response = submit(api_client, design.id, assignment.id, answer_for_assignment(db_session, assignment))
+
+    assert early_response.status_code == 409
+    assert early_response.json()["detail"]["code"] == "assignment_not_yet_due"
+    assert due_response.status_code == 200
+    assert due_response.json()["actual_retention_seconds"] == 60
 
 
 def test_on_time_and_late_submission_use_actual_retention_not_target(api_client, db_session) -> None:

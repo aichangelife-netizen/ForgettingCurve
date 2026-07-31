@@ -1,3 +1,5 @@
+import re
+
 import sqlalchemy as sa
 
 from app.db.database import utc_now
@@ -137,6 +139,10 @@ def initialize_activation_review_design(api_client, db_session, **kwargs) -> dic
 
 def complete_assignment(api_client, design_id: int, assignment_id: int):
     return api_client.post(f"/api/test-designs/{design_id}/activation-review/{assignment_id}/complete")
+
+
+def assert_utc_suffix(timestamp: str) -> None:
+    assert re.search(r"(Z|[+-]\d{2}:\d{2})$", timestamp)
 
 
 def test_assigning_design_initializes_successfully(api_client, db_session) -> None:
@@ -423,6 +429,8 @@ def test_activation_completion_records_anchor_and_schedule(api_client, db_sessio
     assert stored_assignment.scheduled_at is not None
     assert stored_assignment.completed_at is None
     assert (stored_assignment.scheduled_at - stored_assignment.anchor_at).total_seconds() == stored_assignment.test_design_group.interval_seconds
+    assert_utc_suffix(response.json()["anchor_at"])
+    assert_utc_suffix(response.json()["scheduled_at"])
     assert response.json()["remaining_activation_count"] == 3
     assert response.json()["design_status"] == "activation_review"
 
@@ -488,6 +496,9 @@ def test_final_activation_changes_design_to_active_and_sets_timestamps(api_clien
     assert first_response.json()["design_status"] == "activation_review"
     assert final_response.json()["design_status"] == "active"
     assert final_response.json()["activated_at"] is not None
+    assert_utc_suffix(final_response.json()["anchor_at"])
+    assert_utc_suffix(final_response.json()["scheduled_at"])
+    assert_utc_suffix(final_response.json()["activated_at"])
     assert stored_design.status == DesignStatus.ACTIVE
     assert stored_design.activated_at is not None
     assert all(assignment.status == AssignmentStatus.PENDING for assignment in stored_assignments)
@@ -509,6 +520,7 @@ def test_activation_progress_counts_are_correct(api_client, db_session) -> None:
     assert body["anchored_assignment_count"] == 1
     assert body["remaining_activation_count"] == 3
     assert body["activation_review_started_at"] is not None
+    assert_utc_suffix(body["activation_review_started_at"])
     assert body["activated_at"] is None
 
 
@@ -523,6 +535,8 @@ def test_activation_progress_remains_readable_after_active(api_client, db_sessio
     assert response.json()["status"] == "active"
     assert response.json()["remaining_activation_count"] == 0
     assert response.json()["activated_at"] is not None
+    assert_utc_suffix(response.json()["activation_review_started_at"])
+    assert_utc_suffix(response.json()["activated_at"])
 
 
 def test_assignment_schedule_groups_are_ordered_and_counts_are_correct(api_client, db_session) -> None:
@@ -555,6 +569,8 @@ def test_assignment_schedule_earliest_and_latest_timestamps(api_client, db_sessi
     assert group["earliest_scheduled_at"] is not None
     assert group["latest_scheduled_at"] is not None
     assert group["earliest_scheduled_at"] <= group["latest_scheduled_at"]
+    assert_utc_suffix(group["earliest_scheduled_at"])
+    assert_utc_suffix(group["latest_scheduled_at"])
 
 
 def test_assignment_schedule_does_not_expose_english_answers(api_client, db_session) -> None:

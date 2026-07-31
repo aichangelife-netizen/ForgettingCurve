@@ -70,6 +70,8 @@ actual_retention_seconds = attempted_at - anchor_at
 
 The client does not provide research timestamps.
 
+Stored timestamps and API transport timestamps are UTC. API responses include a timezone suffix such as `Z`; the participant-facing browser converts those instants to local display time and includes a timezone abbreviation or offset. Display formatting never changes `actual_retention_seconds`.
+
 Each assignment can have at most one delayed-recall attempt.
 
 ## Completion

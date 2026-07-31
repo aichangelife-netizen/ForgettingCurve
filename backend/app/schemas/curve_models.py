@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from app.schemas.base import APIModel
 
 
-class CurveMetadataResponse(BaseModel):
+class CurveMetadataResponse(APIModel):
     id: int
     participant_id: int
     trigger_test_design_id: int
@@ -21,7 +21,7 @@ class CurveMetadataResponse(BaseModel):
     fitted_at: datetime
 
 
-class ObservedPointResponse(BaseModel):
+class ObservedPointResponse(APIModel):
     test_design_id: int
     test_design_group_id: int
     group_index: int
@@ -34,12 +34,12 @@ class ObservedPointResponse(BaseModel):
     observed_accuracy: float
 
 
-class PredictedPointResponse(BaseModel):
+class PredictedPointResponse(APIModel):
     time_seconds: float
     predicted_retention: float
 
 
-class CurveModelDetailResponse(BaseModel):
+class CurveModelDetailResponse(APIModel):
     curve: CurveMetadataResponse
     observed_points: list[ObservedPointResponse]
     predicted_points: list[PredictedPointResponse]
@@ -50,12 +50,12 @@ class CurveModelCreateResponse(CurveModelDetailResponse):
     created: bool
 
 
-class CurveModelListResponse(BaseModel):
+class CurveModelListResponse(APIModel):
     participant_id: int
     curves: list[CurveMetadataResponse]
 
 
-class CurveEligibilityResponse(BaseModel):
+class CurveEligibilityResponse(APIModel):
     test_design_id: int
     participant_id: int
     design_status: str

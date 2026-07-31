@@ -98,6 +98,26 @@ test("interval formatting covers seconds, minutes, hours, days, percentages, and
   assert.equal(timeModule.formatCountdown("2026-01-01T00:01:00Z", new Date("2026-01-01T00:00:00Z")), "1 minute remaining");
 });
 
+test("UTC timestamps render in browser-local time with timezone details", () => {
+  const timeModule = loadTsModule("lib/time-format.ts");
+  const withSuffix = timeModule.parseUtcTimestamp("2026-07-30T23:31:47Z");
+  const withoutSuffix = timeModule.parseUtcTimestamp("2026-07-30T23:31:47");
+  const rendered = timeModule.formatDateTime("2026-07-30T23:31:47Z", {
+    locale: "en-CA",
+    timeZone: "Asia/Tokyo",
+  });
+
+  assert.equal(withSuffix.toISOString(), "2026-07-30T23:31:47.000Z");
+  assert.equal(withoutSuffix.toISOString(), "2026-07-30T23:31:47.000Z");
+  assert.match(rendered, /^2026-07-31 08:31:47/);
+  assert.match(rendered, /(GMT\+9|UTC\+9|JST)/);
+  assert.equal(
+    timeModule.formatCountdown("2026-07-30T23:31:47", new Date("2026-07-30T23:30:47Z")),
+    "1 minute remaining",
+  );
+  assert.equal(timeModule.formatCountdown("2026-07-30T23:31:47Z", new Date("2026-07-30T23:31:47Z")), "Due now");
+});
+
 test("design validation calculates required items and rejects duplicates", () => {
   const validationModule = loadTsModule("lib/design-validation.ts");
   const valid = validationModule.validateDesignInput(3, "60, 180, 300");

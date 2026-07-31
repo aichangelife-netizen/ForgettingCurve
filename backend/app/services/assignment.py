@@ -11,6 +11,7 @@ from app.db.models import TestAssignment, TestDesign, TestDesignGroup, TestDesig
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.learning import derive_deterministic_seed
 from app.services.test_designs import required_item_count
+from app.services.time import as_utc
 
 
 GROUP_ASSIGNMENT_NAMESPACE = "group_assignment"
@@ -158,7 +159,7 @@ def initialize_assignments(session: Session, test_design_id: int) -> dict:
                     }
                     for group in groups
                 ],
-                "activation_review_started_at": design.activation_review_started_at,
+                "activation_review_started_at": as_utc(design.activation_review_started_at),
             }
     except IntegrityError as exc:
         raise ConflictError("assignment_integrity_conflict", "Assignments could not be initialized.") from exc
@@ -226,6 +227,6 @@ def _group_schedule_summary(group: TestDesignGroup) -> dict:
         ),
         "pending_count": sum(1 for assignment in assignments if assignment.status == TestAssignmentStatus.PENDING),
         "completed_count": sum(1 for assignment in assignments if assignment.status == TestAssignmentStatus.COMPLETED),
-        "earliest_scheduled_at": min(scheduled_times) if scheduled_times else None,
-        "latest_scheduled_at": max(scheduled_times) if scheduled_times else None,
+        "earliest_scheduled_at": as_utc(min(scheduled_times)) if scheduled_times else None,
+        "latest_scheduled_at": as_utc(max(scheduled_times)) if scheduled_times else None,
     }

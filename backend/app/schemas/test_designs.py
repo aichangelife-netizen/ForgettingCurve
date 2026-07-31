@@ -1,16 +1,18 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+
+from app.schemas.base import APIModel
 
 
-class TestDesignCreateRequest(BaseModel):
+class TestDesignCreateRequest(APIModel):
     participant_id: int
     items_per_group: int
     intervals_seconds: list[int]
     random_seed: int | None = None
 
 
-class TestDesignGroupResponse(BaseModel):
+class TestDesignGroupResponse(APIModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -20,7 +22,7 @@ class TestDesignGroupResponse(BaseModel):
     completed_at: datetime | None = None
 
 
-class TestDesignResponse(BaseModel):
+class TestDesignResponse(APIModel):
     id: int
     participant_id: int
     items_per_group: int
@@ -36,7 +38,7 @@ class TestDesignResponse(BaseModel):
     completed_at: datetime | None = None
 
 
-class LearningMaterialItemResponse(BaseModel):
+class LearningMaterialItemResponse(APIModel):
     test_design_item_id: int
     vocabulary_item_id: int
     korean: str
@@ -44,7 +46,7 @@ class LearningMaterialItemResponse(BaseModel):
     is_mastered: bool
 
 
-class LearningMaterialsResponse(BaseModel):
+class LearningMaterialsResponse(APIModel):
     test_design_id: int
     required_item_count: int
     mastered_item_count: int
@@ -52,7 +54,7 @@ class LearningMaterialsResponse(BaseModel):
     items: list[LearningMaterialItemResponse]
 
 
-class NextLearningCheckResponse(BaseModel):
+class NextLearningCheckResponse(APIModel):
     test_design_item_id: int
     vocabulary_item_id: int
     korean: str
@@ -60,13 +62,13 @@ class NextLearningCheckResponse(BaseModel):
     consecutive_correct_count: int
 
 
-class LearningAttemptRequest(BaseModel):
+class LearningAttemptRequest(APIModel):
     test_design_item_id: int
     user_answer: str
     response_time_ms: int | None = None
 
 
-class LearningAttemptResponse(BaseModel):
+class LearningAttemptResponse(APIModel):
     attempt_id: int
     test_design_item_id: int
     is_correct: bool
@@ -82,7 +84,7 @@ class LearningAttemptResponse(BaseModel):
     design_status: str
 
 
-class LearningProgressResponse(BaseModel):
+class LearningProgressResponse(APIModel):
     test_design_id: int
     status: str
     required_item_count: int
@@ -94,14 +96,14 @@ class LearningProgressResponse(BaseModel):
     learning_started_at: datetime | None
 
 
-class AssignmentInitializationGroupResponse(BaseModel):
+class AssignmentInitializationGroupResponse(APIModel):
     test_design_group_id: int
     group_index: int
     interval_seconds: int
     assignment_count: int
 
 
-class AssignmentInitializationResponse(BaseModel):
+class AssignmentInitializationResponse(APIModel):
     test_design_id: int
     status: str
     assignment_count: int
@@ -112,7 +114,7 @@ class AssignmentInitializationResponse(BaseModel):
     activation_review_started_at: datetime
 
 
-class ActivationReviewNextResponse(BaseModel):
+class ActivationReviewNextResponse(APIModel):
     assignment_id: int
     assignment_order: int
     total_assignment_count: int
@@ -125,7 +127,7 @@ class ActivationReviewNextResponse(BaseModel):
     interval_seconds: int
 
 
-class ActivationReviewCompletionResponse(BaseModel):
+class ActivationReviewCompletionResponse(APIModel):
     assignment_id: int
     anchor_at: datetime
     scheduled_at: datetime
@@ -135,7 +137,7 @@ class ActivationReviewCompletionResponse(BaseModel):
     activated_at: datetime | None
 
 
-class ActivationProgressResponse(BaseModel):
+class ActivationProgressResponse(APIModel):
     test_design_id: int
     status: str
     total_assignment_count: int
@@ -145,7 +147,7 @@ class ActivationProgressResponse(BaseModel):
     activated_at: datetime | None
 
 
-class AssignmentScheduleGroupResponse(BaseModel):
+class AssignmentScheduleGroupResponse(APIModel):
     test_design_group_id: int
     group_index: int
     interval_seconds: int
@@ -157,13 +159,13 @@ class AssignmentScheduleGroupResponse(BaseModel):
     latest_scheduled_at: datetime | None
 
 
-class AssignmentScheduleResponse(BaseModel):
+class AssignmentScheduleResponse(APIModel):
     test_design_id: int
     status: str
     groups: list[AssignmentScheduleGroupResponse]
 
 
-class DelayedRecallAssignmentResponse(BaseModel):
+class DelayedRecallAssignmentResponse(APIModel):
     assignment_id: int
     test_design_item_id: int
     vocabulary_item_id: int
@@ -173,7 +175,7 @@ class DelayedRecallAssignmentResponse(BaseModel):
     scheduled_at: datetime
 
 
-class NextDelayedRecallResponse(BaseModel):
+class NextDelayedRecallResponse(APIModel):
     available: bool
     server_time: datetime
     due_count: int
@@ -182,12 +184,12 @@ class NextDelayedRecallResponse(BaseModel):
     next_scheduled_at: datetime | None = None
 
 
-class DelayedRecallSubmissionRequest(BaseModel):
+class DelayedRecallSubmissionRequest(APIModel):
     user_answer: str
     response_time_ms: int | None = None
 
 
-class DelayedRecallSubmissionResponse(BaseModel):
+class DelayedRecallSubmissionResponse(APIModel):
     attempt_id: int
     assignment_id: int
     attempted_at: datetime
@@ -204,7 +206,7 @@ class DelayedRecallSubmissionResponse(BaseModel):
     design_status: str
 
 
-class DelayedRecallProgressResponse(BaseModel):
+class DelayedRecallProgressResponse(APIModel):
     test_design_id: int
     status: str
     total_assignment_count: int
@@ -218,7 +220,7 @@ class DelayedRecallProgressResponse(BaseModel):
     completed_at: datetime | None
 
 
-class RetentionSummaryGroupResponse(BaseModel):
+class RetentionSummaryGroupResponse(APIModel):
     test_design_group_id: int
     group_index: int
     target_interval_seconds: int
@@ -234,7 +236,7 @@ class RetentionSummaryGroupResponse(BaseModel):
     maximum_actual_retention_seconds: int | None
 
 
-class RetentionSummaryResponse(BaseModel):
+class RetentionSummaryResponse(APIModel):
     test_design_id: int
     status: str
     complete_time_point_count: int

@@ -12,6 +12,7 @@ Stage 3 uses this schema for vocabulary import, anonymous participants, draft te
 - SQLite foreign keys are enabled for every SQLAlchemy connection with `PRAGMA foreign_keys=ON`.
 - Application timestamps are generated as UTC-aware Python `datetime` values.
 - Timestamp columns use `DateTime(timezone=True)` in SQLAlchemy.
+- API timestamp responses serialize UTC values with an explicit timezone suffix, normally `Z`.
 - `MASTERY_THRESHOLD` is an application constant with value `2` and is not stored in the database.
 
 ## Tables
@@ -111,7 +112,7 @@ During activation review, each assignment receives a server-generated `anchor_at
 
 The schema does not store `due` or `missed`. An assignment is due when `status = 'pending'` and `scheduled_at <= current UTC time`.
 
-Stage 6 changes pending assignments to completed only after a due delayed-recall submission. Late tests remain accepted. The service preserves the original `anchor_at` and `scheduled_at`, stores the server-generated `completed_at`, and calculates actual retention from `attempted_at - anchor_at`.
+Stage 6 changes pending assignments to completed only after a due delayed-recall submission. Late tests remain accepted. The service preserves the original `anchor_at` and `scheduled_at`, stores the server-generated `completed_at`, and calculates actual retention from `attempted_at - anchor_at`. Stored and calculated timestamps remain UTC; presentation clients convert API timestamps to the browser's local timezone only for display.
 
 Group accuracy is not stored. Later learning and delayed-recall stages should derive accuracy from raw attempt rows so analyses can be recomputed and audited.
 
@@ -186,7 +187,7 @@ This cascade policy supports deleting an unused draft design as one contained un
 
 - SQLite enforces the partial unique index for one non-terminal design per participant.
 - SQLite allows multiple null values in a nullable unique column, which is used for `vocabulary_attempts.test_assignment_id`.
-- SQLite does not preserve timezone metadata in the same way as PostgreSQL. The application must write UTC-aware timestamps and treat loaded timestamps as UTC.
+- SQLite does not preserve timezone metadata in the same way as PostgreSQL. The application must write UTC-aware timestamps, treat loaded timestamps as UTC, and serialize API timestamps with `Z` or an explicit UTC offset.
 - SQLite check constraints cannot compare values across rows. Workflow rules that depend on state transitions or aggregate completeness remain service-layer responsibilities.
 - SQLite does not provide strong row-level locks. Uniqueness constraints plus transactional revalidation provide practical duplicate-submission protection for the local MVP, while a production multi-user deployment may require PostgreSQL and row locks.
 
@@ -194,7 +195,7 @@ This cascade policy supports deleting an unused draft design as one contained un
 
 The database foundation intentionally leaves several rules for later service code:
 
-- Generate and persist UTC-aware timestamps consistently.
+- Generate and persist UTC-aware timestamps consistently, and keep due-state and actual-retention calculations in UTC.
 - Prevent hard deletion of completed designs and official curve rows.
 - Determine whether pending assignments are due.
 - Validate later status transitions and lifecycle timestamp ordering beyond design completion.

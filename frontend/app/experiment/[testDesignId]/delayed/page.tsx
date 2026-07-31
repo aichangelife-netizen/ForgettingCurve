@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ExperimentShell } from "@/components/experiment/ExperimentShell";
 import { ProgressMeter } from "@/components/experiment/ProgressMeter";
@@ -9,7 +9,11 @@ import { ErrorPanel, LoadingPanel } from "@/components/ui/StatusPanels";
 import { getDelayedRecallProgress, getNextDelayedRecall, submitDelayedRecall } from "@/lib/api/delayed-recall";
 import type { DelayedRecallProgress, NextDelayedRecall } from "@/lib/api/types";
 import { clearParticipantSession, readParticipantSession, type ParticipantSession } from "@/lib/participant-session";
-import { formatCountdown, formatDateTime } from "@/lib/time-format";
+import { formatCountdown, formatDateTime, parseUtcTimestamp } from "@/lib/time-format";
+
+const FALLBACK_POLL_MS = 30000;
+const CLOCK_TICK_MS = 1000;
+const DUE_REFRESH_BUFFER_MS = 250;
 
 export default function DelayedRecallPage() {
   const router = useRouter();
@@ -23,9 +27,14 @@ export default function DelayedRecallPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
   const questionStartedAt = useRef<number>(0);
+  const loadInFlightRef = useRef(false);
+  const loadRef = useRef<() => Promise<void>>(async () => {});
 
-  async function load() {
+  const load = useCallback(async () => {
+    if (loadInFlightRef.current) return;
+    loadInFlightRef.current = true;
     setSession(readParticipantSession());
     setLoading(true);
     setMessage(null);
@@ -47,20 +56,46 @@ export default function DelayedRecallPage() {
       setMessage(error instanceof Error ? error.message : "Could not load delayed test state.");
     } finally {
       setLoading(false);
+      loadInFlightRef.current = false;
     }
-  }
+  }, [router, testDesignId]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => void load(), 0);
+    loadRef.current = load;
+  }, [load]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => void loadRef.current(), 0);
     const interval = window.setInterval(() => {
-      void load();
-    }, 30000);
+      void loadRef.current();
+    }, FALLBACK_POLL_MS);
     return () => {
       window.clearTimeout(timeout);
       window.clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testDesignId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, CLOCK_TICK_MS);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (next?.available || !next?.next_scheduled_at) return;
+    const dueAt = parseUtcTimestamp(next.next_scheduled_at);
+    if (!dueAt) return;
+    const delayMs = Math.max(0, dueAt.getTime() - Date.now()) + DUE_REFRESH_BUFFER_MS;
+    const timeout = window.setTimeout(() => {
+      void loadRef.current();
+    }, delayMs);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [next?.available, next?.next_scheduled_at]);
 
   async function handleSubmit() {
     if (!next?.assignment || submitting) return;
@@ -152,7 +187,7 @@ export default function DelayedRecallPage() {
           <h2>No Test Due</h2>
           <p>No test is due right now.</p>
           <p>Next scheduled: {formatDateTime(next?.next_scheduled_at ?? null)}</p>
-          <p>{formatCountdown(next?.next_scheduled_at ?? null)}</p>
+          <p>{formatCountdown(next?.next_scheduled_at ?? null, currentTime)}</p>
           <button type="button" className="secondary-button" onClick={load}>
             Refresh
           </button>

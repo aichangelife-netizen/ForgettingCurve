@@ -148,7 +148,30 @@ test("no-due delayed state displays next scheduled time", () => {
   const page = source("app/experiment/[testDesignId]/delayed/page.tsx");
   assert.match(page, /No test is due right now\./);
   assert.match(page, /formatDateTime\(next\?\.next_scheduled_at/);
-  assert.match(page, /formatCountdown\(next\?\.next_scheduled_at/);
+  assert.match(page, /formatCountdown\(next\?\.next_scheduled_at \?\? null, currentTime\)/);
+});
+
+test("delayed page refresh timing updates countdown without per-second backend polling", () => {
+  const page = source("app/experiment/[testDesignId]/delayed/page.tsx");
+  assert.match(page, /const \[currentTime, setCurrentTime\] = useState\(\(\) => new Date\(\)\)/);
+  assert.match(page, /CLOCK_TICK_MS = 1000/);
+  assert.match(page, /setCurrentTime\(new Date\(\)\)/);
+  assert.doesNotMatch(page, /setInterval\(\(\) => \{\s*void loadRef\.current\(\);\s*\}, CLOCK_TICK_MS/s);
+});
+
+test("delayed page has due-time refresh, cleanup, fallback polling, and request overlap guard", () => {
+  const page = source("app/experiment/[testDesignId]/delayed/page.tsx");
+  assert.match(page, /FALLBACK_POLL_MS = 30000/);
+  assert.match(page, /DUE_REFRESH_BUFFER_MS = 250/);
+  assert.match(page, /parseUtcTimestamp\(next\.next_scheduled_at\)/);
+  assert.match(page, /dueAt\.getTime\(\) - Date\.now\(\)/);
+  assert.match(page, /window\.setTimeout\(\(\) => \{\s*void loadRef\.current\(\);\s*\}, delayMs\)/s);
+  assert.match(page, /window\.clearTimeout\(timeout\)/);
+  assert.match(page, /window\.setInterval\(\(\) => \{\s*void loadRef\.current\(\);\s*\}, FALLBACK_POLL_MS\)/s);
+  assert.match(page, /window\.clearInterval\(interval\)/);
+  assert.match(page, /if \(loadInFlightRef\.current\) return/);
+  assert.match(page, /loadInFlightRef\.current = true/);
+  assert.match(page, /loadInFlightRef\.current = false/);
 });
 
 test("results page displays insufficient-data message below five time points", () => {
